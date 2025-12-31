@@ -1,0 +1,115 @@
+.page {
+  min-height: 100vh;
+  padding: 24px 16px 32px;
+  background: linear-gradient(180deg, #f9f4ef 0%, var(--color-surface) 60%);
+}
+
+.page__header {
+  margin-bottom: 16px;
+}
+
+.page__title {
+  display: block;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.page__subtitle {
+  display: block;
+  margin-top: 6px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.card--list {
+  padding-bottom: 8px;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.quick-actions__footer {
+  margin-top: 12px;
+}
+
+.quick-actions__button {
+  flex: 1;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  border: none;
+}
+
+.quick-actions__button--expense {
+  background: #fcd5ce;
+  color: var(--color-expense);
+}
+
+.quick-actions__button--income {
+  background: #c7f9cc;
+  color: var(--color-income);
+}
+
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: #f9fafb;
+}
+
+.transaction-item__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.transaction-item__icon {
+  font-size: 20px;
+}
+
+.transaction-item__meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.transaction-item__name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.transaction-item__time {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+.amount {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.amount--income {
+  color: var(--color-income);
+}
+
+.amount--expense {
+  color: var(--color-expense);
+}
+
+.empty-state {
+  display: block;
+  padding: 12px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}

@@ -1,0 +1,46 @@
+page {
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #111827;
+  background-color: #f8fafc;
+}
+
+:root {
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-text: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-tertiary: #94a3b8;
+  --color-border: #e2e8f0;
+  --color-outline: #eef2f5;
+  --color-primary: #1f2937;
+  --color-accent: #2563eb;
+  --color-income: #047857;
+  --color-expense: #b91c1c;
+  --color-income-soft: #e6f6ef;
+  --color-expense-soft: #ffe7e0;
+  --color-balance-soft: #e0ecff;
+  --shadow-card: 0 12px 22px rgba(15, 23, 42, 0.05);
+  --shadow-lift: 0 12px 24px rgba(15, 23, 42, 0.08);
+  --radius-lg: 16px;
+  --radius-md: 14px;
+  --radius-sm: 12px;
+}
+
+.theme-dark {
+  --color-bg: #0b1120;
+  --color-surface: #0f172a;
+  --color-text: #f8fafc;
+  --color-text-secondary: #cbd5f5;
+  --color-text-tertiary: #94a3b8;
+  --color-border: #1f2a44;
+  --color-outline: #1e293b;
+  --color-primary: #f8fafc;
+  --color-accent: #60a5fa;
+  --color-income: #34d399;
+  --color-expense: #f87171;
+  --color-income-soft: rgba(52, 211, 153, 0.12);
+  --color-expense-soft: rgba(248, 113, 113, 0.12);
+  --color-balance-soft: rgba(96, 165, 250, 0.12);
+  --shadow-card: 0 12px 22px rgba(2, 6, 23, 0.4);
+  --shadow-lift: 0 12px 24px rgba(2, 6, 23, 0.45);
+}
