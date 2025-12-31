@@ -1,36 +1,42 @@
 .ui-card {
-  padding: 16px;
+  padding: var(--space-card);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   border: 1px solid var(--color-outline);
   box-shadow: var(--shadow-card);
-  margin-bottom: 16px;
+  margin-bottom: var(--space-section);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .ui-card__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 20rpx;
 }
 
 .ui-card__titles {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6rpx;
 }
 
 .ui-card__title {
-  font-size: 15px;
+  font-size: var(--font-body);
   font-weight: 600;
 }
 
 .ui-card__subtitle {
-  font-size: 12px;
+  font-size: var(--font-small);
   color: var(--color-text-tertiary);
 }
 
 .ui-card__action {
-  font-size: 12px;
+  font-size: var(--font-small);
   color: var(--color-accent);
+}
+
+.ui-card:active {
+  transform: translateY(1rpx);
+  box-shadow: var(--shadow-card);
 }

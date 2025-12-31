@@ -25,7 +25,7 @@ export default function RecordPage() {
   const recentTransactions = useMemo(() => transactions.slice(0, 5), [transactions])
 
   const handleQuickEntry = (type: 'EXPENSE' | 'INCOME') => {
-    Taro.navigateTo({ url: `/pages/record/quick?type=${type}` })
+    Taro.navigateTo({ url: `/pages/record/quick/index?type=${type}` })
   }
 
   const handleVoiceEntry = () => {

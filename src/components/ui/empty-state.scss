@@ -1,7 +1,10 @@
 .ui-empty-state {
   display: block;
-  padding: 12px;
+  padding: 20rpx;
   text-align: center;
-  font-size: 13px;
+  font-size: var(--font-small);
   color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-outline);
 }

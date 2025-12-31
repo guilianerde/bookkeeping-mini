@@ -17,7 +17,11 @@ const getNextTransactionId = () => {
 
 export const getTransactions = (): Transaction[] => {
   const items = readStorage<Transaction[]>(storageKeys.transactions, [])
-  return [...items].sort((a, b) => b.dateISO.localeCompare(a.dateISO))
+  return [...items].sort((a, b) => {
+    const left = a.dateISO ?? ''
+    const right = b.dateISO ?? ''
+    return right.localeCompare(left)
+  })
 }
 
 export type TransactionInput = {

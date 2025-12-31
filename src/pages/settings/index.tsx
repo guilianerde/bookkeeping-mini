@@ -85,14 +85,14 @@ export default function SettingsPage() {
             <Text className="setting-row__title">语音记账</Text>
             <Text className="setting-row__desc">开启后可使用语音输入</Text>
           </View>
-          <Switch checked={settings.voiceRecognitionEnabled} onChange={handleVoiceToggle} color="#2563eb" />
+          <Switch checked={settings.voiceRecognitionEnabled} onChange={handleVoiceToggle} color="#6fb1fc" />
         </View>
         <View className="setting-row">
           <View className="setting-row__left">
             <Text className="setting-row__title">深色模式</Text>
             <Text className="setting-row__desc">切换后立即生效</Text>
           </View>
-          <Switch checked={settings.darkModeEnabled} onChange={handleDarkModeToggle} color="#2563eb" />
+          <Switch checked={settings.darkModeEnabled} onChange={handleDarkModeToggle} color="#6fb1fc" />
         </View>
       </Card>
 

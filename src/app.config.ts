@@ -1,15 +1,15 @@
 export default defineAppConfig({
   pages: [
-    'pages/record/quick/index',
-    'pages/record/voice/index',
     'pages/record/index',
     'pages/transactions/index',
     'pages/analytics/index',
-    'pages/settings/index'
+    'pages/settings/index',
+    'pages/record/quick/index',
+    'pages/record/voice/index'
   ],
   window: {
     backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#fff',
+    navigationBarBackgroundColor: '#f5f5f7',
     navigationBarTitleText: 'Bookkeeping',
     navigationBarTextStyle: 'black'
   },

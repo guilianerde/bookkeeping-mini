@@ -18,6 +18,7 @@ export default defineConfig<'vite'>(async (merge, { command, mode }) => {
     sourceRoot: 'src',
     outputRoot: 'dist',
     plugins: [
+      "@tarojs/plugin-framework-react",
       "@tarojs/plugin-generator"
     ],
     defineConstants: {
