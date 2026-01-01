@@ -1,23 +1,25 @@
 .page {
   min-height: 100vh;
-  padding: var(--space-page-top) var(--space-page-x) var(--space-page-bottom);
-  background: var(--color-bg);
+  padding: calc(var(--space-page-top) + env(safe-area-inset-top)) var(--space-page-x) calc(var(--space-page-bottom) + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-surface) 70%);
 }
 
 .page__header {
   margin-bottom: var(--space-section);
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
 }
 
 .page__title {
   display: block;
   font-size: var(--font-title);
   font-weight: 600;
-  letter-spacing: 1rpx;
+  letter-spacing: 0;
 }
 
 .page__subtitle {
   display: block;
-  margin-top: 10rpx;
   color: var(--color-text-secondary);
   font-size: var(--font-subtitle);
 }

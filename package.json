@@ -47,6 +47,8 @@
   "author": "",
   "dependencies": {
     "@babel/runtime": "^7.24.4",
+    "@taroify/core": "^0.8.1",
+    "@taroify/icons": "^0.8.1",
     "@tarojs/components": "4.1.9",
     "@tarojs/helper": "4.1.9",
     "@tarojs/plugin-framework-react": "4.1.9",

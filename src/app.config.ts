@@ -14,26 +14,34 @@ export default defineAppConfig({
     navigationBarTextStyle: 'black'
   },
   tabBar: {
-    color: '#7c8794',
-    selectedColor: '#1f2937',
+    color: '#8e8e93',
+    selectedColor: '#5b8cff',
     backgroundColor: '#ffffff',
     borderStyle: 'white',
     list: [
       {
         pagePath: 'pages/record/index',
-        text: 'Record'
+        text: '记账',
+        iconPath: 'assets/tabbar/record.png',
+        selectedIconPath: 'assets/tabbar/record-active.png'
       },
       {
         pagePath: 'pages/transactions/index',
-        text: 'Transactions'
+        text: '明细',
+        iconPath: 'assets/tabbar/transactions.png',
+        selectedIconPath: 'assets/tabbar/transactions-active.png'
       },
       {
         pagePath: 'pages/analytics/index',
-        text: 'Analytics'
+        text: '分析',
+        iconPath: 'assets/tabbar/analytics.png',
+        selectedIconPath: 'assets/tabbar/analytics-active.png'
       },
       {
         pagePath: 'pages/settings/index',
-        text: 'Settings'
+        text: '设置',
+        iconPath: 'assets/tabbar/settings.png',
+        selectedIconPath: 'assets/tabbar/settings-active.png'
       }
     ]
   }

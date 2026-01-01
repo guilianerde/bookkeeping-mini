@@ -31,6 +31,20 @@ export default defineConfig<'vite'>(async (merge, { command, mode }) => {
     },
     framework: 'react',
     compiler: 'vite',
+    sass: {
+      quietDeps: true,
+      silenceDeprecations: ['legacy-js-api', 'import']
+    },
+    vite: {
+      css: {
+        preprocessorOptions: {
+          scss: {
+            quietDeps: true,
+            silenceDeprecations: ['legacy-js-api', 'import']
+          }
+        }
+      }
+    },
     mini: {
       postcss: {
         pxtransform: {

@@ -1,8 +1,8 @@
 .ui-card {
   padding: var(--space-card);
   border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  border: 1px solid var(--color-outline);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+  border: 1px solid rgba(31, 41, 55, 0.08);
   box-shadow: var(--shadow-card);
   margin-bottom: var(--space-section);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
@@ -12,7 +12,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 18rpx;
 }
 
 .ui-card__titles {
@@ -32,8 +32,14 @@
 }
 
 .ui-card__action {
-  font-size: var(--font-small);
-  color: var(--color-accent);
+  display: inline-flex;
+  align-items: center;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: var(--color-outline);
+  color: var(--color-text);
+  font-size: var(--font-xs);
+  font-weight: 600;
 }
 
 .ui-card:active {
