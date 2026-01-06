@@ -2,9 +2,9 @@
   display: block;
   padding: 26rpx;
   text-align: center;
-  font-size: var(--font-small);
-  color: var(--color-text-secondary);
-  background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
-  border-radius: var(--radius-md);
-  border: 1px dashed var(--color-outline);
+  font-size: 24rpx;
+  color: #969799;
+  background: #ffffff;
+  border-radius: 16rpx;
+  border: 1rpx dashed rgba(0, 0, 0, 0.08);
 }

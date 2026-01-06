@@ -1,36 +1,48 @@
 .page {
   min-height: 100vh;
-  padding: calc(var(--space-page-top) + env(safe-area-inset-top)) var(--space-page-x) calc(var(--space-page-bottom) + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-surface) 70%);
+  padding: calc(40rpx + env(safe-area-inset-top)) 0 calc(56rpx + env(safe-area-inset-bottom));
+  background: var(--bg);
+  box-sizing: border-box;
+}
+
+.page__content {
+  padding: 0 24rpx;
+  box-sizing: border-box;
 }
 
 .page__header {
-  margin-bottom: var(--space-section);
+  margin-bottom: 20rpx;
   display: flex;
   flex-direction: column;
-  gap: 10rpx;
+  gap: 6rpx;
 }
 
 .page__title {
-  display: block;
-  font-size: var(--font-title);
+  font-size: 48rpx;
   font-weight: 600;
-  letter-spacing: 0;
+  color: var(--text-primary);
 }
 
 .page__subtitle {
-  display: block;
-  color: var(--color-text-secondary);
-  font-size: var(--font-subtitle);
+  font-size: 26rpx;
+  color: var(--text-tertiary);
+}
+
+.setting-row.taroify-cell,
+.action-row.taroify-cell {
+  padding: 18rpx 0;
+}
+
+.setting-row.taroify-cell::after,
+.action-row.taroify-cell::after {
+  display: none;
 }
 
 .setting-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx 0;
-  border-bottom: 1px solid var(--color-outline);
-  transition: background var(--transition-fast);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.04);
 }
 
 .setting-row:last-of-type {
@@ -44,22 +56,21 @@
 }
 
 .setting-row__title {
-  font-size: var(--font-body);
+  font-size: 28rpx;
   font-weight: 500;
+  color: #323233;
 }
 
 .setting-row__desc {
-  font-size: var(--font-small);
-  color: var(--color-text-tertiary);
+  font-size: 24rpx;
+  color: #969799;
 }
 
 .action-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx 0;
-  border-bottom: 1px solid var(--color-outline);
-  transition: background var(--transition-fast);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.04);
 }
 
 .action-row:last-of-type {
@@ -67,20 +78,21 @@
 }
 
 .action-row__label {
-  font-size: var(--font-body);
+  font-size: 28rpx;
   font-weight: 500;
+  color: #323233;
 }
 
 .action-row__hint {
-  font-size: var(--font-small);
-  color: var(--color-text-tertiary);
+  font-size: 24rpx;
+  color: #969799;
 }
 
 .action-row--danger .action-row__label {
-  color: var(--color-expense);
+  color: #ba5a58;
 }
 
-.setting-row:active,
-.action-row:active {
-  background: rgba(111, 177, 252, 0.12);
+.press-opacity {
+  opacity: 0.7;
+  transform: scale(0.98);
 }

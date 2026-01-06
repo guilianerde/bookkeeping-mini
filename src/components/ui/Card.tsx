@@ -21,7 +21,9 @@ export default function Card({ title, subtitle, actionText, onAction, className,
             {subtitle ? <Text className="ui-card__subtitle">{subtitle}</Text> : null}
           </View>
           {actionText ? (
-            <Text className="ui-card__action" onClick={onAction}>{actionText}</Text>
+            <Text className="ui-card__action" hoverClass="press-opacity" onClick={onAction}>
+              {actionText}
+            </Text>
           ) : null}
         </View>
       ) : null}

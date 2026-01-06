@@ -1,12 +1,14 @@
 import { View, Text } from '@tarojs/components'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Taro, { useDidShow } from '@tarojs/taro'
+import { Cell, SafeArea } from '@taroify/core'
+import '@taroify/core/index.scss'
+import '@taroify/core/safe-area/style'
 import './index.scss'
 import type { Transaction } from '../../models/transaction'
 import type { Category } from '../../models/category'
 import { getTransactions } from '../../services/transactionService'
 import { getCategories } from '../../services/categoryService'
-import { formatAmount } from '../../utils/format'
 import { getCategoryById } from '../../models/types'
 import * as echarts from 'echarts'
 import { useThemeClass } from '../../utils/theme'
@@ -68,6 +70,47 @@ export default function AnalyticsPage() {
   )
 
   const balanceTotal = incomeTotal - expenseTotal
+
+  const formatCurrencyParts = (value: number) => {
+    const [intPart, decPart] = Math.abs(value).toFixed(2).split('.')
+    return { intPart, decPart }
+  }
+
+  const getAmountParts = (amount: number, type: 'INCOME' | 'EXPENSE') => {
+    const sign = type === 'INCOME' ? '+' : '-'
+    const [intPart, decPart] = amount.toFixed(2).split('.')
+    return { sign, intPart, decPart }
+  }
+
+  const incomeParts = formatCurrencyParts(incomeTotal)
+  const expenseParts = formatCurrencyParts(expenseTotal)
+  const balanceParts = formatCurrencyParts(balanceTotal)
+
+  const categoryToneMap: Record<number, string> = {
+    1: 'food',
+    2: 'shop',
+    3: 'traffic',
+    4: 'fun',
+    5: 'health',
+    6: 'study',
+    7: 'travel',
+    101: 'income',
+    102: 'income',
+    103: 'income',
+    104: 'income'
+  }
+
+  const getCategoryTone = (categoryId?: number) => categoryToneMap[categoryId ?? -1] ?? 'default'
+  const categoryColorMap: Record<string, string> = {
+    food: 'category-icon--food',
+    shop: 'category-icon--shop',
+    traffic: 'category-icon--traffic',
+    fun: 'category-icon--fun',
+    health: 'category-icon--health',
+    study: 'category-icon--study',
+    travel: 'category-icon--travel',
+    income: 'category-icon--income'
+  }
 
   const trendData = useMemo(() => {
     const points: Array<{ label: string; income: number; expense: number }> = []
@@ -283,81 +326,127 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <View className={`page ${themeClass}`}>
-      <View className="page__header">
-        <Text className="page__title">账单分析</Text>
-        <Text className="page__subtitle">统计趋势与分类占比</Text>
-      </View>
+    <View className={`page analytics-page ${themeClass}`}>
+      <View className="page__content">
+        <View className="page__header">
+          <Text className="page__title">账单分析</Text>
+          <Text className="page__subtitle">统计趋势与分类占比</Text>
+        </View>
 
-      <View className="month-selector">
-        <Text className="month-selector__action" onClick={() => shiftMonth(-1)}>上一月</Text>
-        <Text className="month-selector__label">{monthLabel(currentDate)}</Text>
-        <Text className="month-selector__action" onClick={() => shiftMonth(1)}>下一月</Text>
-      </View>
+        <Card className="month-card">
+          <View className="month-selector">
+            <Text className="month-selector__action" hoverClass="press-opacity" onClick={() => shiftMonth(-1)}>
+              上一月
+            </Text>
+            <Text className="month-selector__label">{monthLabel(currentDate)}</Text>
+            <Text className="month-selector__action" hoverClass="press-opacity" onClick={() => shiftMonth(1)}>
+              下一月
+            </Text>
+          </View>
+        </Card>
 
-      <View className="overview">
-        <View className="overview__card overview__card--income">
-          <Text className="overview__label">收入</Text>
-          <Text className="overview__value">{formatAmount(incomeTotal, 'INCOME')}</Text>
-        </View>
-        <View className="overview__card overview__card--expense">
-          <Text className="overview__label">支出</Text>
-          <Text className="overview__value">{formatAmount(expenseTotal, 'EXPENSE')}</Text>
-        </View>
-        <View className="overview__card overview__card--balance">
-          <Text className="overview__label">结余</Text>
-          <Text className={`overview__value ${balanceTotal >= 0 ? 'overview__value--positive' : 'overview__value--negative'}`}>
-            {formatAmount(Math.abs(balanceTotal), balanceTotal >= 0 ? 'INCOME' : 'EXPENSE')}
-          </Text>
-        </View>
-      </View>
-
-      <Card title="近 6 个月趋势" actionText="导出" onAction={handleExport}>
-        <View className="chart-wrapper">
-          <ec-canvas id="trendChart" canvas-id="trendChart" ec={{ onInit: initTrendChart }} />
-        </View>
-        <View className="trend-list">
-          {trendData.map((item) => (
-            <View className="trend-item" key={item.label}>
-              <Text className="trend-item__label">{item.label}</Text>
-              <View className="trend-item__values">
-                <Text className="trend-item__income">{formatAmount(item.income, 'INCOME')}</Text>
-                <Text className="trend-item__expense">{formatAmount(item.expense, 'EXPENSE')}</Text>
+        <Card className="overview-card">
+          <View className="overview-grid">
+            <View className="overview-item">
+              <Text className="overview-item__label">收入</Text>
+              <View className="overview-amount overview-amount--income">
+                <Text className="overview-amount__currency">¥</Text>
+                <Text className="overview-amount__int">{incomeParts.intPart}</Text>
+                <Text className="overview-amount__dec">.{incomeParts.decPart}</Text>
               </View>
             </View>
-          ))}
-        </View>
-      </Card>
-
-      <Card title="本月支出 Top 6" subtitle="按分类汇总">
-        {topCategories.length === 0 ? (
-          <EmptyState text="暂无支出记录" />
-        ) : (
-          <>
-            <View className="chart-wrapper chart-wrapper--compact">
-              <ec-canvas id="categoryChart" canvas-id="categoryChart" ec={{ onInit: initCategoryChart }} />
+            <View className="overview-item">
+              <Text className="overview-item__label">支出</Text>
+              <View className="overview-amount overview-amount--expense">
+                <Text className="overview-amount__currency">¥</Text>
+                <Text className="overview-amount__int">{expenseParts.intPart}</Text>
+                <Text className="overview-amount__dec">.{expenseParts.decPart}</Text>
+              </View>
             </View>
-            <View className="category-list">
-              {topCategories.map((item) => {
-                const categoryInfo = getCategoryById(item.categoryId)
-                const category = categoryMap.get(item.categoryId)
-                return (
-                  <View className="category-item" key={item.categoryId}>
-                    <View className="category-item__left">
-                      <Text className="category-item__icon">{categoryInfo?.icon ?? '🧾'}</Text>
-                      <Text className="category-item__name">{categoryInfo?.desc ?? '未分类'}</Text>
+            <View className="overview-item">
+              <Text className="overview-item__label">结余</Text>
+              <View className={`overview-amount ${balanceTotal >= 0 ? 'overview-amount--income' : 'overview-amount--expense'}`}>
+                {balanceTotal < 0 ? <Text className="overview-amount__sign">-</Text> : null}
+                <Text className="overview-amount__currency">¥</Text>
+                <Text className="overview-amount__int">{balanceParts.intPart}</Text>
+                <Text className="overview-amount__dec">.{balanceParts.decPart}</Text>
+              </View>
+            </View>
+          </View>
+        </Card>
+
+        <Card title="近 6 个月趋势" actionText="导出" onAction={handleExport}>
+          <View className="chart-wrapper">
+            <ec-canvas id="trendChart" canvas-id="trendChart" ec={{ onInit: initTrendChart }} />
+          </View>
+          <View className="trend-list">
+            {trendData.map((item) => {
+              const incomeParts = getAmountParts(item.income, 'INCOME')
+              const expenseParts = getAmountParts(item.expense, 'EXPENSE')
+              return (
+                <Cell key={item.label} className="trend-item" activeOpacity={0.7}>
+                  <Text className="trend-item__label">{item.label}</Text>
+                  <View className="trend-item__values">
+                    <View className="trend-amount trend-amount--income">
+                      <Text className="trend-amount__sign">{incomeParts.sign}</Text>
+                      <Text className="trend-amount__currency">¥</Text>
+                      <Text className="trend-amount__int">{incomeParts.intPart}</Text>
+                      <Text className="trend-amount__dec">.{incomeParts.decPart}</Text>
                     </View>
-                    <View className="category-item__right">
-                      <Text className="category-item__amount">{formatAmount(item.amount, 'EXPENSE')}</Text>
-                      <View className="category-item__dot" style={{ backgroundColor: category?.color ?? '#e2e8f0' }} />
+                    <View className="trend-amount trend-amount--expense">
+                      <Text className="trend-amount__sign">{expenseParts.sign}</Text>
+                      <Text className="trend-amount__currency">¥</Text>
+                      <Text className="trend-amount__int">{expenseParts.intPart}</Text>
+                      <Text className="trend-amount__dec">.{expenseParts.decPart}</Text>
                     </View>
                   </View>
-                )
-              })}
-            </View>
-          </>
-        )}
-      </Card>
+                </Cell>
+              )
+            })}
+          </View>
+        </Card>
+
+        <Card title="本月支出 Top 6" subtitle="按分类汇总">
+          {topCategories.length === 0 ? (
+            <EmptyState text="暂无支出记录" />
+          ) : (
+            <>
+              <View className="chart-wrapper chart-wrapper--compact">
+                <ec-canvas id="categoryChart" canvas-id="categoryChart" ec={{ onInit: initCategoryChart }} />
+              </View>
+              <View className="category-list">
+                {topCategories.map((item) => {
+                  const categoryInfo = getCategoryById(item.categoryId)
+                  const category = categoryMap.get(item.categoryId)
+                  const iconClass = categoryColorMap[getCategoryTone(categoryInfo?.id)] ?? ''
+                  const amountParts = getAmountParts(item.amount, 'EXPENSE')
+                  return (
+                    <Cell key={item.categoryId} className="category-item" activeOpacity={0.7}>
+                      <View className="category-item__left">
+                        <View className={`category-item__icon ${iconClass}`}>{categoryInfo?.icon ?? '🧾'}</View>
+                        <View className="category-item__meta">
+                          <Text className="category-item__name">{categoryInfo?.desc ?? '未分类'}</Text>
+                          <Text className="category-item__hint">占比 {((item.amount / Math.max(expenseTotal, 1)) * 100).toFixed(1)}%</Text>
+                        </View>
+                      </View>
+                      <View className="category-item__right">
+                        <View className="category-amount">
+                          <Text className="category-amount__sign">{amountParts.sign}</Text>
+                          <Text className="category-amount__currency">¥</Text>
+                          <Text className="category-amount__int">{amountParts.intPart}</Text>
+                          <Text className="category-amount__dec">.{amountParts.decPart}</Text>
+                        </View>
+                        <View className="category-item__dot" style={{ backgroundColor: category?.color ?? '#e2e8f0' }} />
+                      </View>
+                    </Cell>
+                  )
+                })}
+              </View>
+            </>
+          )}
+        </Card>
+      </View>
+      <SafeArea position="bottom" />
     </View>
   )
 }
