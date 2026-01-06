@@ -1,3 +1,5 @@
+@import '../../styles/mixins.scss';
+
 .page {
   min-height: 100vh;
   padding: calc(40rpx + env(safe-area-inset-top)) 0 calc(56rpx + env(safe-area-inset-bottom));
@@ -75,24 +77,7 @@
 }
 
 .overview-amount {
-  display: flex;
-  align-items: baseline;
-  gap: 4rpx;
-  font-family: 'DIN Alternate', 'DIN Condensed', 'SF Pro Display', 'Helvetica Neue', sans-serif;
-  font-variant-numeric: tabular-nums;
-}
-
-.overview-amount__sign,
-.overview-amount__currency,
-.overview-amount__dec {
-  font-size: 28rpx;
-  color: #969799;
-}
-
-.overview-amount__int {
-  font-size: 40rpx;
-  font-weight: 700;
-  color: #323233;
+  @include amount-text(40rpx, 28rpx, #969799, 4rpx);
 }
 
 .overview-amount--income .overview-amount__sign,
@@ -162,23 +147,7 @@
 }
 
 .trend-amount {
-  display: flex;
-  align-items: baseline;
-  gap: 2rpx;
-  font-variant-numeric: tabular-nums;
-}
-
-.trend-amount__sign,
-.trend-amount__currency,
-.trend-amount__dec {
-  font-size: 20rpx;
-  color: #969799;
-}
-
-.trend-amount__int {
-  font-size: 24rpx;
-  font-weight: 600;
-  color: #323233;
+  @include amount-text(24rpx, 20rpx, #969799, 2rpx);
 }
 
 .trend-amount--income .trend-amount__sign,
@@ -300,23 +269,12 @@
 }
 
 .category-amount {
-  display: flex;
-  align-items: baseline;
-  gap: 2rpx;
-  font-variant-numeric: tabular-nums;
-}
-
-.category-amount__sign,
-.category-amount__currency,
-.category-amount__dec {
-  font-size: 20rpx;
-  color: #969799;
+  @include amount-text(24rpx, 20rpx, #969799, 2rpx);
 }
 
 .category-amount__int {
-  font-size: 24rpx;
-  font-weight: 600;
   color: #ba5a58;
+  font-weight: 600;
 }
 
 .category-item__dot {
@@ -326,6 +284,5 @@
 }
 
 .press-opacity {
-  opacity: 0.7;
-  transform: scale(0.98);
+  @include press-opacity();
 }

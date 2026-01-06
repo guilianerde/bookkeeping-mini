@@ -1,3 +1,5 @@
+@import '../../styles/mixins.scss';
+
 .page {
   min-height: 100vh;
   padding: calc(40rpx + env(safe-area-inset-top)) 0 calc(56rpx + env(safe-area-inset-bottom));
@@ -93,6 +95,5 @@
 }
 
 .press-opacity {
-  opacity: 0.7;
-  transform: scale(0.98);
+  @include press-opacity();
 }

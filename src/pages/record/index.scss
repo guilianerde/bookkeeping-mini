@@ -1,3 +1,5 @@
+@import '../../styles/mixins.scss';
+
 .page {
   min-height: 100vh;
   padding: calc(40rpx + env(safe-area-inset-top)) 0 calc(56rpx + env(safe-area-inset-bottom));
@@ -524,7 +526,7 @@
 }
 
 .press-opacity {
-  opacity: 0.6;
+  @include press-opacity();
 }
 
 .record-amount--income {

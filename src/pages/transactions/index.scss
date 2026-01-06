@@ -1,3 +1,5 @@
+@import '../../styles/mixins.scss';
+
 .page {
   min-height: 100vh;
   padding: calc(40rpx + env(safe-area-inset-top)) 0 calc(56rpx + env(safe-area-inset-bottom));
@@ -131,24 +133,7 @@
 }
 
 .summary-amount {
-  display: flex;
-  align-items: baseline;
-  gap: 4rpx;
-  font-family: 'DIN Alternate', 'DIN Condensed', 'SF Pro Display', 'Helvetica Neue', sans-serif;
-  font-variant-numeric: tabular-nums;
-}
-
-.summary-amount__sign,
-.summary-amount__currency,
-.summary-amount__dec {
-  font-size: 28rpx;
-  color: #969799;
-}
-
-.summary-amount__int {
-  font-size: 40rpx;
-  font-weight: 700;
-  color: #323233;
+  @include amount-text(40rpx, 28rpx, #969799, 4rpx);
 }
 
 .summary-amount--income .summary-amount__int,
@@ -180,11 +165,16 @@
 }
 
 .summary-footer__value {
-  display: flex;
-  align-items: baseline;
-  gap: 4rpx;
-  font-family: 'DIN Alternate', 'DIN Condensed', 'SF Pro Display', 'Helvetica Neue', sans-serif;
-  font-variant-numeric: tabular-nums;
+  .summary-amount__int {
+    font-size: 28rpx;
+    font-weight: 600;
+  }
+
+  .summary-amount__sign,
+  .summary-amount__currency,
+  .summary-amount__dec {
+    font-size: 22rpx;
+  }
 }
 
 .summary-footer__value--positive .summary-amount__int,
@@ -239,26 +229,10 @@
 }
 
 .transaction-summary {
-  display: flex;
-  align-items: baseline;
-  gap: 2rpx;
+  @include amount-text(26rpx, 20rpx, #969799, 2rpx);
   padding: 6rpx 10rpx;
   border-radius: 16rpx;
   background: #f2f4f7;
-  font-variant-numeric: tabular-nums;
-}
-
-.transaction-summary__sign,
-.transaction-summary__currency,
-.transaction-summary__dec {
-  font-size: 20rpx;
-  color: #969799;
-}
-
-.transaction-summary__int {
-  font-size: 26rpx;
-  font-weight: 600;
-  color: #323233;
 }
 
 .transaction-summary--income {
@@ -388,22 +362,8 @@
 }
 
 .transaction-amount {
-  display: flex;
-  align-items: baseline;
-  gap: 2rpx;
-  font-variant-numeric: tabular-nums;
+  @include amount-text(30rpx, 22rpx, #969799, 2rpx);
   margin-left: 12rpx;
-}
-
-.transaction-amount__sign,
-.transaction-amount__currency,
-.transaction-amount__dec {
-  font-size: 22rpx;
-}
-
-.transaction-amount__int {
-  font-size: 30rpx;
-  font-weight: 600;
 }
 
 .transaction-amount--income .transaction-amount__sign,
@@ -419,6 +379,5 @@
 }
 
 .press-opacity {
-  opacity: 0.7;
-  transform: scale(0.98);
+  @include press-opacity();
 }

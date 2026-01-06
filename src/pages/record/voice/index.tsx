@@ -1,12 +1,14 @@
 import { View, Text, Button, Textarea, Input, Picker } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { SafeArea } from '@taroify/core'
+import '@taroify/core/index.scss'
+import '@taroify/core/safe-area/style'
 import './index.scss'
 import { voiceAsrConfig } from '../../../config/voice'
 import { parseRecognitionResult } from '../../../utils/voiceParser'
 import { addTransaction } from '../../../services/transactionService'
-import { formatAmount } from '../../../utils/format'
-import { getCategoryById, getExpenseCategories, getIncomeCategories } from '../../../models/types'
+import { getExpenseCategories, getIncomeCategories } from '../../../models/types'
 import { getSettings } from '../../../services/settingsService'
 import { useThemeClass } from '../../../utils/theme'
 import Card from '../../../components/ui/Card'
@@ -207,97 +209,105 @@ export default function VoiceRecordPage() {
   }, [])
 
   return (
-    <View className={`page ${themeClass}`}>
-      <View className="page__header">
-        <Text className="page__title">语音记账</Text>
-        <Text className="page__subtitle">说出你的记账内容</Text>
-      </View>
-
-      <View className={`status-banner status-banner--${status}`}>
-        <View className="status-banner__left">
-          <View className={`status-dot status-dot--${status}`} />
-          <Text className="status-text">
-            {status === 'idle' && '准备就绪，点击开始录音'}
-            {status === 'recording' && '录音中，建议控制在 60 秒内'}
-            {status === 'uploading' && '识别中，请稍候'}
-            {status === 'parsed' && '识别完成，可编辑后保存'}
-            {status === 'error' && (errorMessage || '识别失败，请重试')}
-          </Text>
+    <View className={`page voice-record-page ${themeClass}`}>
+      <View className="page__content">
+        <View className="page__header">
+          <Text className="page__title">语音记账</Text>
+          <Text className="page__subtitle">说出你的记账内容</Text>
         </View>
-        <Text className="status-timer">{status === 'recording' ? `${duration}s` : ''}</Text>
-      </View>
 
-      <Card title="录音控制" subtitle={`录音时长 ${duration}s`}>
-        <View className="voice-actions">
-          <Button className="voice-button voice-button--start" onClick={handleStart} disabled={status === 'recording'}>
-            开始录音
-          </Button>
-          <Button className="voice-button voice-button--stop" onClick={handleStop} disabled={status !== 'recording'}>
-            停止录音
-          </Button>
-        </View>
-        <View className={`waveform waveform--${status}`}>
-          <View className="waveform__bar" />
-          <View className="waveform__bar" />
-          <View className="waveform__bar" />
-          <View className="waveform__bar" />
-          <View className="waveform__bar" />
-        </View>
-      </Card>
-
-      <Card title="识别文本" subtitle="可手动修改后解析">
-        <Textarea
-          className="voice-text"
-          value={recognizedText}
-          onInput={(event) => setRecognizedText(event.detail.value)}
-          placeholder="识别文本将显示在这里"
-          placeholderClass="voice-text__placeholder"
-        />
-        <View className="voice-parse-button">
-          <PrimaryButton text="解析文本" onClick={handleParseText} />
-        </View>
-      </Card>
-
-      <Card title="解析结果" subtitle={parsed ? '可直接保存' : '请输入可解析内容'}>
-        {parsed ? (
-          <View className="parsed-summary">
-            <View className="parsed-row">
-              <Text className="parsed-label">类型</Text>
-              <Text className="parsed-value">{parsed.type === 'INCOME' ? '收入' : '支出'}</Text>
-            </View>
-            <View className="parsed-row">
-              <Text className="parsed-label">金额</Text>
-              <Input
-                className="parsed-input"
-                type="digit"
-                value={editAmount}
-                onInput={(event) => setEditAmount(event.detail.value)}
-              />
-            </View>
-            <View className="parsed-row">
-              <Text className="parsed-label">分类</Text>
-              <Picker mode="selector" range={categoryOptions.map((item) => item.desc)} value={editCategoryIndex} onChange={(event) => setEditCategoryIndex(event.detail.value)}>
-                <View className="picker-field">
-                  <Text className="picker-field__text">{categoryOptions[editCategoryIndex]?.desc ?? '未分类'}</Text>
-                  <Text className="picker-field__icon">▾</Text>
-                </View>
-              </Picker>
-            </View>
-            <View className="parsed-row">
-              <Text className="parsed-label">备注</Text>
-              <Input
-                className="parsed-input"
-                value={editDescription}
-                onInput={(event) => setEditDescription(event.detail.value)}
-              />
-            </View>
+        <Card className={`status-banner status-banner--${status}`}>
+          <View className="status-banner__left">
+            <View className={`status-dot status-dot--${status}`} />
+            <Text className="status-text">
+              {status === 'idle' && '准备就绪，点击开始录音'}
+              {status === 'recording' && '录音中，建议控制在 60 秒内'}
+              {status === 'uploading' && '识别中，请稍候'}
+              {status === 'parsed' && '识别完成，可编辑后保存'}
+              {status === 'error' && (errorMessage || '识别失败，请重试')}
+            </Text>
           </View>
-        ) : (
-          <Text className="parsed-empty">请输入如“午餐花了25元”</Text>
-        )}
-      </Card>
+          <Text className="status-timer">{status === 'recording' ? `${duration}s` : ''}</Text>
+        </Card>
 
-      <PrimaryButton text="保存" onClick={handleSave} />
+        <Card title="录音控制" subtitle={`录音时长 ${duration}s`}>
+          <View className="voice-actions">
+            <Button className="voice-button voice-button--start" onClick={handleStart} disabled={status === 'recording'}>
+              开始录音
+            </Button>
+            <Button className="voice-button voice-button--stop" onClick={handleStop} disabled={status !== 'recording'}>
+              停止录音
+            </Button>
+          </View>
+          <View className={`waveform waveform--${status}`}>
+            <View className="waveform__bar" />
+            <View className="waveform__bar" />
+            <View className="waveform__bar" />
+            <View className="waveform__bar" />
+            <View className="waveform__bar" />
+          </View>
+        </Card>
+
+        <Card title="识别文本" subtitle="可手动修改后解析">
+          <Textarea
+            className="voice-text"
+            value={recognizedText}
+            onInput={(event) => setRecognizedText(event.detail.value)}
+            placeholder="识别文本将显示在这里"
+            placeholderClass="voice-text__placeholder"
+          />
+          <View className="voice-parse-button">
+            <PrimaryButton text="解析文本" onClick={handleParseText} />
+          </View>
+        </Card>
+
+        <Card title="解析结果" subtitle={parsed ? '可直接保存' : '请输入可解析内容'}>
+          {parsed ? (
+            <View className="parsed-summary">
+              <View className="parsed-row">
+                <Text className="parsed-label">类型</Text>
+                <Text className="parsed-value">{parsed.type === 'INCOME' ? '收入' : '支出'}</Text>
+              </View>
+              <View className="parsed-row">
+                <Text className="parsed-label">金额</Text>
+                <Input
+                  className="parsed-input"
+                  type="digit"
+                  value={editAmount}
+                  onInput={(event) => setEditAmount(event.detail.value)}
+                />
+              </View>
+              <View className="parsed-row">
+                <Text className="parsed-label">分类</Text>
+                <Picker
+                  mode="selector"
+                  range={categoryOptions.map((item) => item.desc)}
+                  value={editCategoryIndex}
+                  onChange={(event) => setEditCategoryIndex(event.detail.value)}
+                >
+                  <View className="picker-field" hoverClass="press-opacity">
+                    <Text className="picker-field__text">{categoryOptions[editCategoryIndex]?.desc ?? '未分类'}</Text>
+                    <Text className="picker-field__icon">▾</Text>
+                  </View>
+                </Picker>
+              </View>
+              <View className="parsed-row">
+                <Text className="parsed-label">备注</Text>
+                <Input
+                  className="parsed-input"
+                  value={editDescription}
+                  onInput={(event) => setEditDescription(event.detail.value)}
+                />
+              </View>
+            </View>
+          ) : (
+            <Text className="parsed-empty">请输入如“午餐花了25元”</Text>
+          )}
+        </Card>
+
+        <PrimaryButton text="保存" onClick={handleSave} />
+      </View>
+      <SafeArea position="bottom" />
     </View>
   )
 }

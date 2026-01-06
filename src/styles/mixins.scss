@@ -1,0 +1,30 @@
+@mixin press-opacity($scale: 0.98, $opacity: 0.7) {
+  opacity: $opacity;
+  transform: scale($scale);
+}
+
+@mixin amount-text(
+  $int-size: 40rpx,
+  $minor-size: 28rpx,
+  $muted-color: #969799,
+  $gap: 4rpx
+) {
+  display: flex;
+  align-items: baseline;
+  gap: $gap;
+  font-family: 'DIN Alternate', 'DIN Condensed', 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  font-variant-numeric: tabular-nums;
+
+  &__sign,
+  &__currency,
+  &__dec {
+    font-size: $minor-size;
+    color: $muted-color;
+  }
+
+  &__int {
+    font-size: $int-size;
+    font-weight: 700;
+    color: #323233;
+  }
+}

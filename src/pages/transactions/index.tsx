@@ -289,7 +289,7 @@ export default function TransactionsPage() {
           <View className="summary-footer">
             <Text className="summary-footer__text">筛选后合计</Text>
             <View
-              className={`summary-footer__value ${filteredTotal >= 0 ? 'summary-footer__value--positive' : 'summary-footer__value--negative'}`}
+              className={`summary-footer__value summary-amount ${filteredTotal >= 0 ? 'summary-footer__value--positive' : 'summary-footer__value--negative'}`}
             >
               {filteredTotal < 0 ? <Text className="summary-amount__sign">-</Text> : null}
               <Text className="summary-amount__currency">¥</Text>
