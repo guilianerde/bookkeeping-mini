@@ -2,7 +2,7 @@ import { View, Text } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Cell, Empty, Flex, SafeArea } from '@taroify/core'
-import { ArrowRight, Audio, ArrowDown, ArrowUp } from '@taroify/icons'
+import {ArrowRight, Audio, ArrowDown, ArrowUp, Graphic} from '@taroify/icons'
 import "@taroify/icons/index.scss"
 import "@taroify/core/index.scss"
 import '@taroify/core/safe-area/style'
@@ -157,6 +157,13 @@ export default function RecordPage() {
     Taro.navigateTo({ url: '/pages/record/voice/index' })
   }
 
+
+  // 多人记账
+  const handleMultiIncome = () => {
+    //todo：多人记账功能
+  }
+
+
   const handleViewAll = () => {
     Taro.switchTab({ url: '/pages/transactions/index' })
   }
@@ -211,20 +218,36 @@ export default function RecordPage() {
 
         <Card className="quick-card">
           <Flex className="quick-split" align="stretch">
+            {/*/!*语音记账 暂时隐藏*!/*/}
             {/*<Flex.Item className="quick-split__main">*/}
-              {/*<Cell className="voice-cta" clickable hoverClass="press-opacity" onClick={handleVoiceEntry}>*/}
-              {/*  <View className="voice-cta__content">*/}
-              {/*    <View className="voice-cta__icon">*/}
-              {/*      <Audio />*/}
-              {/*    </View>*/}
-              {/*    <View className="voice-cta__text">*/}
-              {/*      <Text className="voice-cta__title">语音记账</Text>*/}
-              {/*      <Text className="voice-cta__hint">轻触开始</Text>*/}
-              {/*    </View>*/}
-              {/*  </View>*/}
-              {/*  <ArrowRight className="voice-cta__chevron" />*/}
-              {/*</Cell>*/}
+            {/*  <Cell className="voice-cta" clickable hoverClass="press-opacity" onClick={handleVoiceEntry}>*/}
+            {/*    <View className="voice-cta__content">*/}
+            {/*      <View className="voice-cta__icon">*/}
+            {/*        <Audio />*/}
+            {/*      </View>*/}
+            {/*      <View className="voice-cta__text">*/}
+            {/*        <Text className="voice-cta__title">语音记账</Text>*/}
+            {/*        <Text className="voice-cta__hint">轻触开始</Text>*/}
+            {/*      </View>*/}
+            {/*    </View>*/}
+            {/*    <ArrowRight className="voice-cta__chevron" />*/}
+            {/*  </Cell>*/}
             {/*</Flex.Item>*/}
+            <Flex.Item className="quick-split__main">
+            <Cell className="multi-cta" clickable hoverClass="press-opacity"
+                  onClick={handleMultiIncome}>
+              <View className="multi-cta__content">
+                <View className="multi-cta__icon">
+                  <Graphic />
+                </View>
+                <View className="multi-cta__text">
+                  <Text className="multi-cta__title">多人记账</Text>
+                  <Text className="multi-cta__hint">轻触开始</Text>
+                </View>
+              </View>
+              <ArrowRight className="multi-cta__chevron" />
+            </Cell>
+            </Flex.Item>
             <Flex.Item className="quick-split__side">
               <View className="quick-stack">
                 <View
