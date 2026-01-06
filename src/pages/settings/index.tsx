@@ -2,8 +2,10 @@ import { View, Text, Switch } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useState } from 'react'
 import { Cell, SafeArea } from '@taroify/core'
+import { Arrow, Warning } from '@taroify/icons'
 import '@taroify/core/index.scss'
 import '@taroify/core/safe-area/style'
+import '@taroify/icons/index.scss'
 import './index.scss'
 import type { Settings } from '../../services/settingsService'
 import { getSettings, updateSettings } from '../../services/settingsService'
@@ -47,6 +49,7 @@ export default function SettingsPage() {
     })
   }
 
+  // TODO: replace with Dialog for secondary confirm when UX flow is finalized.
   const handleClearData = () => {
     Taro.showModal({
       title: '确认清除',
@@ -84,48 +87,84 @@ export default function SettingsPage() {
         </View>
 
         <Card title="功能开关">
-          <Cell className="setting-row" align="center" activeOpacity={0.7}>
-            <View className="setting-row__left">
-              <Text className="setting-row__title">语音记账</Text>
-              <Text className="setting-row__desc">开启后可使用语音输入</Text>
-            </View>
-            <Switch checked={settings.voiceRecognitionEnabled} onChange={handleVoiceToggle} color="#4f7dff" />
-          </Cell>
-          <Cell className="setting-row" align="center" activeOpacity={0.7}>
-            <View className="setting-row__left">
-              <Text className="setting-row__title">深色模式</Text>
-              <Text className="setting-row__desc">切换后立即生效</Text>
-            </View>
-            <Switch checked={settings.darkModeEnabled} onChange={handleDarkModeToggle} color="#4f7dff" />
-          </Cell>
+          <Cell.Group>
+            <Cell className="setting-row" clickable align="center" activeOpacity={0.7}>
+              <View className="setting-row__left">
+                <Text className="setting-row__title">语音记账</Text>
+                <Text className="setting-row__desc">开启后可使用语音输入</Text>
+              </View>
+              <Switch checked={settings.voiceRecognitionEnabled} onChange={handleVoiceToggle} color="#4f7dff" />
+            </Cell>
+            <Cell className="setting-row" clickable align="center" activeOpacity={0.7}>
+              <View className="setting-row__left">
+                <Text className="setting-row__title">深色模式</Text>
+                <Text className="setting-row__desc">切换后立即生效</Text>
+              </View>
+              <Switch checked={settings.darkModeEnabled} onChange={handleDarkModeToggle} color="#4f7dff" />
+            </Cell>
+          </Cell.Group>
         </Card>
 
-        <Card title="数据管理">
-          <Cell className="action-row" clickable hoverClass="press-opacity" activeOpacity={0.7} onClick={handleBackup}>
-            <Text className="action-row__label">数据备份</Text>
-            <Text className="action-row__hint">云端备份</Text>
-          </Cell>
-          <Cell className="action-row" clickable hoverClass="press-opacity" activeOpacity={0.7} onClick={handleRestore}>
-            <Text className="action-row__label">数据恢复</Text>
-            <Text className="action-row__hint">从云端恢复</Text>
-          </Cell>
+        <Card title="数据管理" className="data-card">
+          <Cell.Group className="data-group">
+            <Cell
+              className="action-row"
+              clickable
+              hoverClass="press-opacity"
+              activeOpacity={0.7}
+              rightIcon={<Arrow />}
+              onClick={handleBackup}
+            >
+              <View className="action-row__content">
+                <Text className="action-row__label">数据备份</Text>
+                <Text className="action-row__hint">云端备份</Text>
+              </View>
+            </Cell>
+            <Cell
+              className="action-row"
+              clickable
+              hoverClass="press-opacity"
+              activeOpacity={0.7}
+              rightIcon={<Arrow />}
+              onClick={handleRestore}
+            >
+              <View className="action-row__content">
+                <Text className="action-row__label">数据恢复</Text>
+                <Text className="action-row__hint">从云端恢复</Text>
+              </View>
+            </Cell>
+          </Cell.Group>
           <Cell
             className="action-row action-row--danger"
             clickable
             hoverClass="press-opacity"
             activeOpacity={0.7}
+            icon={<Warning />}
             onClick={handleClearData}
           >
-            <Text className="action-row__label">清除本地数据</Text>
-            <Text className="action-row__hint">删除所有交易</Text>
+            <View className="action-row__content">
+              <Text className="action-row__label">清除本地数据</Text>
+              <Text className="action-row__hint">删除所有交易</Text>
+            </View>
           </Cell>
         </Card>
 
         <Card title="关于">
-          <Cell className="action-row" clickable hoverClass="press-opacity" activeOpacity={0.7} onClick={handleAbout}>
-            <Text className="action-row__label">版本信息</Text>
-            <Text className="action-row__hint">1.0.0</Text>
-          </Cell>
+          <Cell.Group>
+            <Cell
+              className="action-row"
+              clickable
+              hoverClass="press-opacity"
+              activeOpacity={0.7}
+              rightIcon={<Arrow />}
+              onClick={handleAbout}
+            >
+              <View className="action-row__content">
+                <Text className="action-row__label">版本信息</Text>
+                <Text className="action-row__hint">1.0.0</Text>
+              </View>
+            </Cell>
+          </Cell.Group>
         </Card>
       </View>
       <SafeArea position="bottom" />

@@ -211,20 +211,20 @@ export default function RecordPage() {
 
         <Card className="quick-card">
           <Flex className="quick-split" align="stretch">
-            <Flex.Item className="quick-split__main">
-              <Cell className="voice-cta" clickable hoverClass="press-opacity" onClick={handleVoiceEntry}>
-                <View className="voice-cta__content">
-                  <View className="voice-cta__icon">
-                    <Audio />
-                  </View>
-                  <View className="voice-cta__text">
-                    <Text className="voice-cta__title">语音记账</Text>
-                    <Text className="voice-cta__hint">轻触开始</Text>
-                  </View>
-                </View>
-                <ArrowRight className="voice-cta__chevron" />
-              </Cell>
-            </Flex.Item>
+            {/*<Flex.Item className="quick-split__main">*/}
+              {/*<Cell className="voice-cta" clickable hoverClass="press-opacity" onClick={handleVoiceEntry}>*/}
+              {/*  <View className="voice-cta__content">*/}
+              {/*    <View className="voice-cta__icon">*/}
+              {/*      <Audio />*/}
+              {/*    </View>*/}
+              {/*    <View className="voice-cta__text">*/}
+              {/*      <Text className="voice-cta__title">语音记账</Text>*/}
+              {/*      <Text className="voice-cta__hint">轻触开始</Text>*/}
+              {/*    </View>*/}
+              {/*  </View>*/}
+              {/*  <ArrowRight className="voice-cta__chevron" />*/}
+              {/*</Cell>*/}
+            {/*</Flex.Item>*/}
             <Flex.Item className="quick-split__side">
               <View className="quick-stack">
                 <View

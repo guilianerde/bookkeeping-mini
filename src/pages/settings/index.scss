@@ -30,6 +30,14 @@
   color: var(--text-tertiary);
 }
 
+.data-card.ui-card {
+  margin: 24rpx 0;
+}
+
+.data-group {
+  margin-bottom: 18rpx;
+}
+
 .setting-row.taroify-cell,
 .action-row.taroify-cell {
   padding: 18rpx 0;
@@ -79,6 +87,12 @@
   border-bottom: none;
 }
 
+.action-row__content {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
 .action-row__label {
   font-size: 28rpx;
   font-weight: 500;
@@ -91,7 +105,12 @@
 }
 
 .action-row--danger .action-row__label {
-  color: #ba5a58;
+  color: #ee0a24;
+}
+
+.action-row--danger .taroify-icon {
+  color: #ee0a24;
+  font-size: 24rpx;
 }
 
 .press-opacity {
