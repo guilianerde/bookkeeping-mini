@@ -1,0 +1,316 @@
+@import '../../styles/mixins.scss';
+
+.page {
+  min-height: 100vh;
+  padding: calc(40rpx + env(safe-area-inset-top)) 0 calc(56rpx + env(safe-area-inset-bottom));
+  background: #f8f8f8;
+  box-sizing: border-box;
+}
+
+.page__content {
+  padding: 0 24rpx;
+  box-sizing: border-box;
+}
+
+.page__header {
+  margin-bottom: 20rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.page__title {
+  font-size: 48rpx;
+  font-weight: 600;
+  color: #323233;
+}
+
+.page__subtitle {
+  font-size: 26rpx;
+  color: #969799;
+}
+
+.group-overview {
+  margin-bottom: 24rpx;
+}
+
+.group-overview__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.overview-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.overview-item__label {
+  font-size: 24rpx;
+  color: #969799;
+}
+
+.overview-amount {
+  @include amount-text(40rpx, 26rpx, #969799, 4rpx);
+}
+
+.overview-amount__tag {
+  font-size: 22rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 12rpx;
+  background: rgba(79, 125, 255, 0.12);
+  color: #4f7dff;
+  margin-right: 6rpx;
+}
+
+.overview-amount--primary .overview-amount__int {
+  color: #323233;
+}
+
+.overview-amount--receive .overview-amount__int,
+.overview-amount--receive .overview-amount__currency {
+  color: #1f9a68;
+}
+
+.overview-amount--pay .overview-amount__int,
+.overview-amount--pay .overview-amount__currency {
+  color: #f2994a;
+}
+
+.overview-divider {
+  width: 1rpx;
+  height: 88rpx;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.member-strip {
+  margin-top: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.member-strip__label {
+  font-size: 24rpx;
+  color: #969799;
+}
+
+.member-strip__avatars {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.member-avatar {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 18rpx;
+  background: #f2f4f7;
+  color: #323233;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.member-avatar--self {
+  background: rgba(79, 125, 255, 0.12);
+  color: #4f7dff;
+  font-weight: 600;
+}
+
+.group-actions {
+  margin-bottom: 24rpx;
+}
+
+.group-actions__row {
+  margin-bottom: 16rpx;
+}
+
+.group-actions__row:last-child {
+  margin-bottom: 0;
+}
+
+.settle-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 18rpx;
+  border-radius: 16rpx;
+  background: #f7f8fa;
+  border: 1rpx solid rgba(0, 0, 0, 0.04);
+}
+
+.settle-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.settle-card__title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #323233;
+}
+
+.settle-card__hint {
+  font-size: 24rpx;
+  color: #969799;
+}
+
+.settle-card__action {
+  padding: 10rpx 18rpx;
+  border-radius: 16rpx;
+  background: rgba(242, 153, 74, 0.16);
+  color: #f2994a;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.group-list {
+  margin-bottom: 24rpx;
+}
+
+.group-empty {
+  padding: 24rpx 0 12rpx;
+  text-align: center;
+}
+
+.group-empty__text {
+  font-size: 24rpx;
+  color: #969799;
+}
+
+.group-transactions {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.group-transaction.taroify-cell {
+  padding: 18rpx;
+  border-radius: 16rpx;
+  background: #ffffff;
+  border: 1rpx solid rgba(0, 0, 0, 0.04);
+}
+
+.group-transaction.taroify-cell::after {
+  display: none;
+}
+
+.group-transaction {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.group-transaction__left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex: 1;
+}
+
+.group-transaction__icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 16rpx;
+  background: #f2f4f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  flex-shrink: 0;
+}
+
+.group-transaction__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.group-transaction__name {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #323233;
+}
+
+.group-transaction__time,
+.group-transaction__payer {
+  font-size: 24rpx;
+  color: #969799;
+}
+
+.group-transaction__amount {
+  @include amount-text(30rpx, 22rpx, #969799, 2rpx);
+}
+
+.group-transaction__amount .group-transaction__int,
+.group-transaction__amount .group-transaction__currency {
+  color: #ba5a58;
+}
+
+.settlement-card {
+  margin-bottom: 24rpx;
+}
+
+.settlement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.settlement-item {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 12rpx 16rpx;
+  border-radius: 16rpx;
+  background: #f7f8fa;
+  font-size: 24rpx;
+  color: #323233;
+}
+
+.settlement-item__amount {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 4rpx;
+  font-weight: 600;
+  color: #323233;
+}
+
+.settlement-item__currency {
+  font-size: 22rpx;
+}
+
+.settlement-footer {
+  margin-top: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.settlement-footer__hint {
+  font-size: 24rpx;
+  color: #969799;
+}
+
+.settlement-footer__action {
+  padding: 10rpx 18rpx;
+  border-radius: 16rpx;
+  background: rgba(79, 125, 255, 0.12);
+  color: #4f7dff;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.press-opacity {
+  @include press-opacity();
+}

@@ -4,7 +4,9 @@ export const storageKeys = {
   transactions: 'transactions',
   categories: 'categories',
   nextTransactionId: 'transactions_next_id',
-  settings: 'settings'
+  settings: 'settings',
+  groupSessions: 'group_sessions',
+  groupTransactions: 'group_transactions'
 }
 
 export const readStorage = <T>(key: string, fallback: T): T => {

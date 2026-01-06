@@ -1,23 +1,29 @@
-import { View, Text } from '@tarojs/components'
+import { View, Text, Input } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Cell, Empty, Flex, SafeArea } from '@taroify/core'
-import {ArrowRight, Audio, ArrowDown, ArrowUp, Graphic} from '@taroify/icons'
+import { Cell, Empty, Flex, Popup, SafeArea } from '@taroify/core'
+import { ArrowDown, ArrowUp } from '@taroify/icons'
 import "@taroify/icons/index.scss"
 import "@taroify/core/index.scss"
 import '@taroify/core/safe-area/style'
 import './index.scss'
 import Card from '../../components/ui/Card'
+import PrimaryButton from '../../components/ui/PrimaryButton'
 import type { Transaction } from '../../models/transaction'
+import type { GroupSession, GroupTransaction } from '../../models/group'
 import { getCategories } from '../../services/categoryService'
 import { getTransactions } from '../../services/transactionService'
+import { addGroupSession, getGroupSessions, getGroupTransactions } from '../../services/groupService'
 import { formatDate, formatTime } from '../../utils/format'
 import { getCategoryById } from '../../models/types'
 import { useThemeClass } from '../../utils/theme'
-import { getSettings } from '../../services/settingsService'
 
 export default function RecordPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [groupSessions, setGroupSessions] = useState<GroupSession[]>([])
+  const [groupTransactions, setGroupTransactions] = useState<GroupTransaction[]>([])
+  const [groupSheetOpen, setGroupSheetOpen] = useState(false)
+  const [groupTitle, setGroupTitle] = useState('')
   const themeClass = useThemeClass()
   const monthlyBudget = 3000
   const [animatedTotals, setAnimatedTotals] = useState({ expense: 0, income: 0, balance: 0 })
@@ -26,9 +32,15 @@ export default function RecordPage() {
   useDidShow(() => {
     getCategories()
     setTransactions(getTransactions())
+    setGroupSessions(getGroupSessions())
+    setGroupTransactions(getGroupTransactions())
   })
 
-  const recentTransactions = useMemo(() => transactions.slice(0, 5), [transactions])
+  const recentTransactions = useMemo(() => transactions, [transactions])
+  const groupSessionMap = useMemo(
+    () => new Map(groupSessions.map((session) => [session.id, session])),
+    [groupSessions]
+  )
   const totals = useMemo(() => {
     return transactions.reduce(
       (acc, item) => {
@@ -111,7 +123,8 @@ export default function RecordPage() {
     health: 'record-cell__icon--health',
     study: 'record-cell__icon--study',
     travel: 'record-cell__icon--travel',
-    income: 'record-cell__icon--income'
+    income: 'record-cell__icon--income',
+    group: 'record-cell__icon--group'
   }
 
   const expenseParts = formatCurrencyParts(animatedTotals.expense)
@@ -125,21 +138,41 @@ export default function RecordPage() {
     { key: 'budget', label: '总预算', parts: budgetParts },
     { key: 'daily', label: '日均支出', parts: dailyExpenseParts }
   ]
-  const recordItems = useMemo(
-    () =>
-      recentTransactions.map((item) => {
-        const category = getCategoryById(item.categoryId)
-        const amountDisplay = getAmountDisplay(item.amount, item.type)
-        return {
-          id: item.id,
-          category,
-          amountDisplay,
-          tone: getCategoryTone(category?.id),
-          timeText: `${formatDate(item.dateISO)} ${formatTime(item.dateISO)}`
-        }
-      }),
-    [recentTransactions]
-  )
+  const recordItems = useMemo(() => {
+    const personalItems = recentTransactions.map((item) => {
+      const category = getCategoryById(item.categoryId)
+      const amountDisplay = getAmountDisplay(item.amount, item.type)
+      return {
+        id: `personal-${item.id}`,
+        source: 'personal' as const,
+        name: category?.desc ?? '未分类',
+        icon: category?.icon ?? '🧾',
+        amountDisplay,
+        tone: getCategoryTone(category?.id),
+        timeText: `${formatDate(item.dateISO)} ${formatTime(item.dateISO)}`,
+        dateISO: item.dateISO
+      }
+    })
+
+    const groupItems = groupTransactions.map((item) => {
+      const session = groupSessionMap.get(item.sessionId)
+      const amountDisplay = getAmountDisplay(item.amount, 'EXPENSE')
+      return {
+        id: `group-${item.id}`,
+        source: 'group' as const,
+        name: session?.title ?? '多人记账',
+        icon: '👥',
+        amountDisplay: { ...amountDisplay, className: 'record-amount record-amount--group' },
+        tone: 'group',
+        timeText: `${formatDate(item.dateISO)} ${formatTime(item.dateISO)}`,
+        dateISO: item.dateISO
+      }
+    })
+
+    return [...personalItems, ...groupItems]
+      .sort((a, b) => (b.dateISO ?? '').localeCompare(a.dateISO ?? ''))
+      .slice(0, 5)
+  }, [recentTransactions, groupTransactions, groupSessionMap])
 
   const handleQuickEntry = (type: 'EXPENSE' | 'INCOME') => {
     Taro.navigateTo({
@@ -149,18 +182,16 @@ export default function RecordPage() {
     })
   }
 
-  const handleVoiceEntry = () => {
-    if (!getSettings().voiceRecognitionEnabled) {
-      Taro.showToast({ title: '语音记账已关闭', icon: 'none' })
-      return
-    }
-    Taro.navigateTo({ url: '/pages/record/voice/index' })
+
+  const handleOpenGroupSheet = () => {
+    setGroupSheetOpen(true)
   }
 
-
-  // 多人记账
-  const handleMultiIncome = () => {
-    //todo：多人记账功能
+  const handleCreateGroup = () => {
+    const session = addGroupSession(groupTitle, [{ id: 'self', name: '我', isSelf: true }])
+    setGroupSheetOpen(false)
+    setGroupTitle('')
+    Taro.navigateTo({ url: `/pages/group/index?id=${session.id}` })
   }
 
 
@@ -216,63 +247,41 @@ export default function RecordPage() {
           </Flex>
         </Card>
 
+        <Card className="group-card">
+          <View className="group-card__content">
+            <View className="group-card__text">
+              <Text className="group-card__title">多人记账</Text>
+              <Text className="group-card__hint">适合旅行、团建、聚餐临时记账</Text>
+            </View>
+            <View className="group-card__action" hoverClass="press-opacity" onClick={handleOpenGroupSheet}>
+              <Text>发起活动</Text>
+            </View>
+          </View>
+        </Card>
+
         <Card className="quick-card">
-          <Flex className="quick-split" align="stretch">
-            {/*/!*语音记账 暂时隐藏*!/*/}
-            {/*<Flex.Item className="quick-split__main">*/}
-            {/*  <Cell className="voice-cta" clickable hoverClass="press-opacity" onClick={handleVoiceEntry}>*/}
-            {/*    <View className="voice-cta__content">*/}
-            {/*      <View className="voice-cta__icon">*/}
-            {/*        <Audio />*/}
-            {/*      </View>*/}
-            {/*      <View className="voice-cta__text">*/}
-            {/*        <Text className="voice-cta__title">语音记账</Text>*/}
-            {/*        <Text className="voice-cta__hint">轻触开始</Text>*/}
-            {/*      </View>*/}
-            {/*    </View>*/}
-            {/*    <ArrowRight className="voice-cta__chevron" />*/}
-            {/*  </Cell>*/}
-            {/*</Flex.Item>*/}
-            <Flex.Item className="quick-split__main">
-            <Cell className="multi-cta" clickable hoverClass="press-opacity"
-                  onClick={handleMultiIncome}>
-              <View className="multi-cta__content">
-                <View className="multi-cta__icon">
-                  <Graphic />
-                </View>
-                <View className="multi-cta__text">
-                  <Text className="multi-cta__title">多人记账</Text>
-                  <Text className="multi-cta__hint">轻触开始</Text>
-                </View>
+          <View className="quick-stack quick-stack--full">
+            <View
+              className="quick-mini quick-mini--expense"
+              hoverClass="quick-mini--active press-opacity"
+              onClick={() => handleQuickEntry('EXPENSE')}
+            >
+              <View className="quick-mini__icon quick-mini__icon--expense">
+                <ArrowDown />
               </View>
-              <ArrowRight className="multi-cta__chevron" />
-            </Cell>
-            </Flex.Item>
-            <Flex.Item className="quick-split__side">
-              <View className="quick-stack">
-                <View
-                  className="quick-mini quick-mini--expense"
-                  hoverClass="quick-mini--active press-opacity"
-                  onClick={() => handleQuickEntry('EXPENSE')}
-                >
-                  <View className="quick-mini__icon quick-mini__icon--expense">
-                    <ArrowDown />
-                  </View>
-                  <Text className="quick-mini__title">支出</Text>
-                </View>
-                <View
-                  className="quick-mini quick-mini--income"
-                  hoverClass="quick-mini--active press-opacity"
-                  onClick={() => handleQuickEntry('INCOME')}
-                >
-                  <View className="quick-mini__icon quick-mini__icon--income">
-                    <ArrowUp />
-                  </View>
-                  <Text className="quick-mini__title">收入</Text>
-                </View>
+              <Text className="quick-mini__title">支出</Text>
+            </View>
+            <View
+              className="quick-mini quick-mini--income"
+              hoverClass="quick-mini--active press-opacity"
+              onClick={() => handleQuickEntry('INCOME')}
+            >
+              <View className="quick-mini__icon quick-mini__icon--income">
+                <ArrowUp />
               </View>
-            </Flex.Item>
-          </Flex>
+              <Text className="quick-mini__title">收入</Text>
+            </View>
+          </View>
         </Card>
 
         <View className="section-head">
@@ -293,9 +302,12 @@ export default function RecordPage() {
               return (
                 <Cell key={item.id} className="record-cell" clickable hoverClass="cell-hover press-opacity">
                   <View className="record-cell__left">
-                    <View className={`record-cell__icon ${iconClass}`}>{item.category?.icon ?? '🧾'}</View>
+                    <View className={`record-cell__icon ${iconClass}`}>{item.icon}</View>
                     <View className="record-cell__meta">
-                      <Text className="record-cell__name">{item.category?.desc ?? '未分类'}</Text>
+                      <View className="record-cell__title">
+                        <Text className="record-cell__name">{item.name}</Text>
+                        {item.source === 'group' ? <Text className="record-cell__badge">多人</Text> : null}
+                      </View>
                       <Text className="record-cell__time">{item.timeText}</Text>
                     </View>
                   </View>
@@ -312,6 +324,30 @@ export default function RecordPage() {
         </Card>
       </View>
       <SafeArea position="bottom" />
+      <Popup
+        open={groupSheetOpen}
+        onClose={() => setGroupSheetOpen(false)}
+        rounded
+        placement="bottom"
+        className="group-sheet"
+      >
+        <View className="group-sheet__header">
+          <Text className="group-sheet__title">发起多人记账</Text>
+          <Text className="group-sheet__subtitle">输入活动主题并分享给好友</Text>
+        </View>
+        <View className="group-sheet__body">
+          <Text className="group-sheet__label">活动主题</Text>
+          <Input
+            className="group-sheet__input"
+            value={groupTitle}
+            onInput={(event) => setGroupTitle(event.detail.value)}
+            placeholder="例如 周末露营 / 团建聚餐"
+            placeholderClass="group-sheet__placeholder"
+          />
+          <PrimaryButton text="一键发起分享" onClick={handleCreateGroup} />
+        </View>
+        <SafeArea position="bottom" />
+      </Popup>
     </View>
   )
 }

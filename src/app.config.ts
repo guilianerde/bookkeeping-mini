@@ -5,7 +5,9 @@ export default defineAppConfig({
     'pages/analytics/index',
     'pages/settings/index',
     'pages/record/quick/index',
-    'pages/record/voice/index'
+    'pages/record/voice/index',
+    'pages/group/index',
+    'pages/group/record/index'
   ],
   window: {
     backgroundTextStyle: 'light',
