@@ -3,8 +3,8 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Cell, Empty, Flex, Popup, SafeArea } from '@taroify/core'
 import { ArrowDown, ArrowUp } from '@taroify/icons'
-import "@taroify/icons/index.scss"
-import "@taroify/core/index.scss"
+import '@taroify/icons/index.scss'
+import '@taroify/core/index.scss'
 import '@taroify/core/safe-area/style'
 import './index.scss'
 import Card from '../../components/ui/Card'
@@ -201,121 +201,121 @@ export default function RecordPage() {
 
   return (
     <View className={`page record-page ${themeClass}`}>
-      <View className="page__content">
-        <View className="page__header">
-          <Text className="page__title">记账</Text>
-          <Text className="page__helper">几秒钟完成一笔记账。</Text>
+      <View className='page__content'>
+        <View className='page__header'>
+          <Text className='page__title'>记账</Text>
+          <Text className='page__helper'>几秒钟完成一笔记账。</Text>
         </View>
 
-        <Card className="summary-card">
-          <View className="summary-card__top">
-            <View className="summary-metric">
-              <Text className="summary-metric__label">本月支出</Text>
-              <View className="summary-metric__value">
-                <Text className="summary-metric__currency">¥</Text>
-                <Text className="summary-metric__int">{expenseParts.intPart}</Text>
-                <Text className="summary-metric__dec">.{expenseParts.decPart}</Text>
+        <Card className='summary-card'>
+          <View className='summary-card__top'>
+            <View className='summary-metric'>
+              <Text className='summary-metric__label'>本月支出</Text>
+              <View className='summary-metric__value'>
+                <Text className='summary-metric__currency'>¥</Text>
+                <Text className='summary-metric__int'>{expenseParts.intPart}</Text>
+                <Text className='summary-metric__dec'>.{expenseParts.decPart}</Text>
               </View>
             </View>
-            <View className="summary-metric">
-              <Text className="summary-metric__label">本月收入</Text>
-              <View className="summary-metric__value">
-                <Text className="summary-metric__currency">¥</Text>
-                <Text className="summary-metric__int">{incomeParts.intPart}</Text>
-                <Text className="summary-metric__dec">.{incomeParts.decPart}</Text>
+            <View className='summary-metric'>
+              <Text className='summary-metric__label'>本月收入</Text>
+              <View className='summary-metric__value'>
+                <Text className='summary-metric__currency'>¥</Text>
+                <Text className='summary-metric__int'>{incomeParts.intPart}</Text>
+                <Text className='summary-metric__dec'>.{incomeParts.decPart}</Text>
               </View>
             </View>
           </View>
-          <View className="summary-card__progress">
-            <View className="summary-card__progress-bar">
-              <View className="summary-card__progress-fill" style={{ width: `${progressPercent}%` }} />
+          <View className='summary-card__progress'>
+            <View className='summary-card__progress-bar'>
+              <View className='summary-card__progress-fill' style={{ width: `${progressPercent}%` }} />
             </View>
-            <Text className="summary-card__progress-text">预算已用 {progressPercent}%</Text>
+            <Text className='summary-card__progress-text'>预算已用 {progressPercent}%</Text>
           </View>
-          <View className="summary-card__divider" />
-          <Flex className="summary-card__stats" align="center">
+          <View className='summary-card__divider' />
+          <Flex className='summary-card__stats' align='center'>
             {dashboardItems.map((item) => (
-              <Flex.Item key={item.key} className="summary-stat">
-                <Text className="summary-stat__label">{item.label}</Text>
-                <View className="summary-stat__value">
-                  <Text className="summary-stat__currency">¥</Text>
-                  <Text className="summary-stat__int">{item.parts.intPart}</Text>
-                  <Text className="summary-stat__dec">.{item.parts.decPart}</Text>
+              <Flex.Item key={item.key} className='summary-stat'>
+                <Text className='summary-stat__label'>{item.label}</Text>
+                <View className='summary-stat__value'>
+                  <Text className='summary-stat__currency'>¥</Text>
+                  <Text className='summary-stat__int'>{item.parts.intPart}</Text>
+                  <Text className='summary-stat__dec'>.{item.parts.decPart}</Text>
                 </View>
               </Flex.Item>
             ))}
           </Flex>
         </Card>
 
-        <Card className="group-card">
-          <View className="group-card__content">
-            <View className="group-card__text">
-              <Text className="group-card__title">多人记账</Text>
-              <Text className="group-card__hint">适合旅行、团建、聚餐临时记账</Text>
+        <Card className='group-card'>
+          <View className='group-card__content'>
+            <View className='group-card__text'>
+              <Text className='group-card__title'>多人记账</Text>
+              <Text className='group-card__hint'>适合旅行、团建、聚餐临时记账</Text>
             </View>
-            <View className="group-card__action" hoverClass="press-opacity" onClick={handleOpenGroupSheet}>
+            <View className='group-card__action' hoverClass='press-opacity' onClick={handleOpenGroupSheet}>
               <Text>发起活动</Text>
             </View>
           </View>
         </Card>
 
-        <Card className="quick-card">
-          <View className="quick-stack quick-stack--full">
+        <Card className='quick-card'>
+          <View className='quick-stack quick-stack--full'>
             <View
-              className="quick-mini quick-mini--expense"
-              hoverClass="quick-mini--active press-opacity"
+              className='quick-mini quick-mini--expense'
+              hoverClass='quick-mini--active press-opacity'
               onClick={() => handleQuickEntry('EXPENSE')}
             >
-              <View className="quick-mini__icon quick-mini__icon--expense">
+              <View className='quick-mini__icon quick-mini__icon--expense'>
                 <ArrowDown />
               </View>
-              <Text className="quick-mini__title">支出</Text>
+              <Text className='quick-mini__title'>支出</Text>
             </View>
             <View
-              className="quick-mini quick-mini--income"
-              hoverClass="quick-mini--active press-opacity"
+              className='quick-mini quick-mini--income'
+              hoverClass='quick-mini--active press-opacity'
               onClick={() => handleQuickEntry('INCOME')}
             >
-              <View className="quick-mini__icon quick-mini__icon--income">
+              <View className='quick-mini__icon quick-mini__icon--income'>
                 <ArrowUp />
               </View>
-              <Text className="quick-mini__title">收入</Text>
+              <Text className='quick-mini__title'>收入</Text>
             </View>
           </View>
         </Card>
 
-        <View className="section-head">
-          <Text className="section-head__title">最近记录</Text>
-          <Text className="section-head__action" hoverClass="press-opacity" onClick={handleViewAll}>
+        <View className='section-head'>
+          <Text className='section-head__title'>最近记录</Text>
+          <Text className='section-head__action' hoverClass='press-opacity' onClick={handleViewAll}>
             查看全部
           </Text>
         </View>
-        <Card className="records-group">
+        <Card className='records-group'>
           {recentTransactions.length === 0 ? (
-            <View className="records-empty">
-              <Empty description="暂无记录" />
-              <Text className="records-empty__hint">开始你的第一笔记账</Text>
+            <View className='records-empty'>
+              <Empty description='暂无记录' />
+              <Text className='records-empty__hint'>开始你的第一笔记账</Text>
             </View>
           ) : (
             recordItems.map((item) => {
               const iconClass = categoryColorMap[item.tone] ?? ''
               return (
-                <Cell key={item.id} className="record-cell" clickable hoverClass="cell-hover press-opacity">
-                  <View className="record-cell__left">
+                <Cell key={item.id} className='record-cell' clickable hoverClass='cell-hover press-opacity'>
+                  <View className='record-cell__left'>
                     <View className={`record-cell__icon ${iconClass}`}>{item.icon}</View>
-                    <View className="record-cell__meta">
-                      <View className="record-cell__title">
-                        <Text className="record-cell__name">{item.name}</Text>
-                        {item.source === 'group' ? <Text className="record-cell__badge">多人</Text> : null}
+                    <View className='record-cell__meta'>
+                      <View className='record-cell__title'>
+                        <Text className='record-cell__name'>{item.name}</Text>
+                        {item.source === 'group' ? <Text className='record-cell__badge'>多人</Text> : null}
                       </View>
-                      <Text className="record-cell__time">{item.timeText}</Text>
+                      <Text className='record-cell__time'>{item.timeText}</Text>
                     </View>
                   </View>
                   <View className={item.amountDisplay.className}>
-                    <Text className="record-amount__sign">{item.amountDisplay.sign}</Text>
-                    <Text className="record-amount__currency">¥</Text>
-                    <Text className="record-amount__int">{item.amountDisplay.intPart}</Text>
-                    <Text className="record-amount__dec">.{item.amountDisplay.decPart}</Text>
+                    <Text className='record-amount__sign'>{item.amountDisplay.sign}</Text>
+                    <Text className='record-amount__currency'>¥</Text>
+                    <Text className='record-amount__int'>{item.amountDisplay.intPart}</Text>
+                    <Text className='record-amount__dec'>.{item.amountDisplay.decPart}</Text>
                   </View>
                 </Cell>
               )
@@ -323,30 +323,30 @@ export default function RecordPage() {
           )}
         </Card>
       </View>
-      <SafeArea position="bottom" />
+      <SafeArea position='bottom' />
       <Popup
         open={groupSheetOpen}
         onClose={() => setGroupSheetOpen(false)}
         rounded
-        placement="bottom"
-        className="group-sheet"
+        placement='bottom'
+        className='group-sheet'
       >
-        <View className="group-sheet__header">
-          <Text className="group-sheet__title">发起多人记账</Text>
-          <Text className="group-sheet__subtitle">输入活动主题并分享给好友</Text>
+        <View className='group-sheet__header'>
+          <Text className='group-sheet__title'>发起多人记账</Text>
+          <Text className='group-sheet__subtitle'>输入活动主题并分享给好友</Text>
         </View>
-        <View className="group-sheet__body">
-          <Text className="group-sheet__label">活动主题</Text>
+        <View className='group-sheet__body'>
+          <Text className='group-sheet__label'>活动主题</Text>
           <Input
-            className="group-sheet__input"
+            className='group-sheet__input'
             value={groupTitle}
             onInput={(event) => setGroupTitle(event.detail.value)}
-            placeholder="例如 周末露营 / 团建聚餐"
-            placeholderClass="group-sheet__placeholder"
+            placeholder='例如 周末露营 / 团建聚餐'
+            placeholderClass='group-sheet__placeholder'
           />
-          <PrimaryButton text="一键发起分享" onClick={handleCreateGroup} />
+          <PrimaryButton text='一键发起分享' onClick={handleCreateGroup} />
         </View>
-        <SafeArea position="bottom" />
+        <SafeArea position='bottom' />
       </Popup>
     </View>
   )

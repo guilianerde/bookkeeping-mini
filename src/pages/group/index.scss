@@ -135,6 +135,21 @@
   margin-bottom: 0;
 }
 
+.group-share {
+  width: 100%;
+  border-radius: 20rpx;
+  background: rgba(79, 125, 255, 0.12);
+  border: none;
+  color: #4f7dff;
+  font-size: 28rpx;
+  font-weight: 600;
+  padding: 14rpx 0;
+}
+
+.group-share::after {
+  border: none;
+}
+
 .settle-card {
   display: flex;
   align-items: center;
@@ -292,8 +307,7 @@
 .settlement-footer {
   margin-top: 16rpx;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 12rpx;
 }
 
@@ -302,14 +316,35 @@
   color: #969799;
 }
 
+.settlement-footer__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12rpx;
+}
+
 .settlement-footer__action {
-  padding: 10rpx 18rpx;
+  padding: 10rpx 12rpx;
   border-radius: 16rpx;
   background: rgba(79, 125, 255, 0.12);
   color: #4f7dff;
   font-size: 24rpx;
   font-weight: 600;
+  text-align: center;
 }
+
+.settlement-footer__action--ghost {
+  background: #f7f8fa;
+  border: 1rpx solid rgba(0, 0, 0, 0.04);
+  color: #5f6368;
+  font-weight: 500;
+}
+
+.settlement-poster {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+}
+
 
 .press-opacity {
   @include press-opacity();
