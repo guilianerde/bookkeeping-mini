@@ -18,8 +18,9 @@ const normalizePath = (path?: string) => {
 
 const openTarget = (url: string) => {
   const normalized = normalizePath(url)
-  if (tabPages.has(normalized)) {
-    Taro.switchTab({ url: normalized })
+  const [path] = normalized.split('?')
+  if (tabPages.has(path)) {
+    Taro.switchTab({ url: path })
     return
   }
   Taro.redirectTo({ url: normalized })

@@ -10,10 +10,10 @@ import './index.scss'
 import Card from '../../components/ui/Card'
 import PrimaryButton from '../../components/ui/PrimaryButton'
 import type { Transaction } from '../../models/transaction'
-import type { GroupSession, GroupTransaction } from '../../models/group'
+import type { GroupSession, GroupExpense } from '../../models/group'
 import { getCategories } from '../../services/categoryService'
 import { getTransactions } from '../../services/transactionService'
-import { addGroupSession, getGroupSessions, getGroupTransactions } from '../../services/groupService'
+import { createGroup, getGroupExpenses, getJoinedGroups } from '../../services/groupService'
 import { formatDate, formatTime } from '../../utils/format'
 import { getCategoryById } from '../../models/types'
 import { useThemeClass } from '../../utils/theme'
@@ -21,7 +21,7 @@ import { useThemeClass } from '../../utils/theme'
 export default function RecordPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [groupSessions, setGroupSessions] = useState<GroupSession[]>([])
-  const [groupTransactions, setGroupTransactions] = useState<GroupTransaction[]>([])
+  const [groupExpenses, setGroupExpenses] = useState<GroupExpense[]>([])
   const [groupSheetOpen, setGroupSheetOpen] = useState(false)
   const [groupTitle, setGroupTitle] = useState('')
   const themeClass = useThemeClass()
@@ -32,8 +32,10 @@ export default function RecordPage() {
   useDidShow(() => {
     getCategories()
     setTransactions(getTransactions())
-    setGroupSessions(getGroupSessions())
-    setGroupTransactions(getGroupTransactions())
+    const groups = getJoinedGroups()
+    setGroupSessions(groups)
+    const allExpenses = groups.flatMap((session) => getGroupExpenses(session.id))
+    setGroupExpenses(allExpenses)
   })
 
   const recentTransactions = useMemo(() => transactions, [transactions])
@@ -154,8 +156,8 @@ export default function RecordPage() {
       }
     })
 
-    const groupItems = groupTransactions.map((item) => {
-      const session = groupSessionMap.get(item.sessionId)
+    const groupItems = groupExpenses.map((item) => {
+      const session = groupSessionMap.get(item.groupId)
       const amountDisplay = getAmountDisplay(item.amount, 'EXPENSE')
       return {
         id: `group-${item.id}`,
@@ -172,7 +174,7 @@ export default function RecordPage() {
     return [...personalItems, ...groupItems]
       .sort((a, b) => (b.dateISO ?? '').localeCompare(a.dateISO ?? ''))
       .slice(0, 5)
-  }, [recentTransactions, groupTransactions, groupSessionMap])
+  }, [recentTransactions, groupExpenses, groupSessionMap])
 
   const handleQuickEntry = (type: 'EXPENSE' | 'INCOME') => {
     Taro.navigateTo({
@@ -187,11 +189,15 @@ export default function RecordPage() {
     setGroupSheetOpen(true)
   }
 
-  const handleCreateGroup = () => {
-    const session = addGroupSession(groupTitle, [{ id: 'self', name: '我', isSelf: true }])
-    setGroupSheetOpen(false)
-    setGroupTitle('')
-    Taro.navigateTo({ url: `/pages/group/index?id=${session.id}` })
+  const handleCreateGroup = async () => {
+    try {
+      const session = await createGroup(groupTitle.trim() || '临时多人记账')
+      setGroupSheetOpen(false)
+      setGroupTitle('')
+      Taro.navigateTo({ url: `/pages/group/index?id=${session.id}` })
+    } catch (error) {
+      Taro.showToast({ title: '创建失败，请重试', icon: 'none' })
+    }
   }
 
 

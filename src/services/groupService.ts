@@ -1,96 +1,112 @@
+import { request } from './request'
 import { readStorage, storageKeys, writeStorage } from './storage'
-import type { GroupMember, GroupSession, GroupTransaction } from '../models/group'
-import { demoDataEnabled } from '../config/demo'
+import type { GroupExpense, GroupSession, GroupSettlement } from '../models/group'
+import { connectGroupSocket, disconnectGroupSocket } from './groupWs'
 
-const demoMembers: GroupMember[] = [
-  { id: 'self', name: '我', isSelf: true },
-  { id: 'u1', name: '阿敏' },
-  { id: 'u2', name: 'Leo' },
-  { id: 'u3', name: '可可' }
-]
+type GroupApiResponse = {
+  groupId: number
+  title: string
+  wsPath: string
+}
 
-const createDemoSession = (): GroupSession => ({
-  id: 'demo',
-  title: '周末露营',
-  createdAt: new Date().toISOString(),
-  members: demoMembers
+const toSession = (data: GroupApiResponse): GroupSession => ({
+  id: data.groupId,
+  title: data.title,
+  wsPath: data.wsPath,
+  joinedAt: new Date().toISOString()
 })
 
-const createDemoTransactions = (): GroupTransaction[] => {
-  const now = new Date()
-  const withOffset = (hoursAgo: number) => {
-    const date = new Date(now)
-    date.setHours(date.getHours() - hoursAgo)
-    return date.toISOString()
-  }
-
-  return [
-    {
-      id: 'g1',
-      sessionId: 'demo',
-      amount: 268,
-      description: '营地门票',
-      payerId: 'self',
-      participantIds: ['self', 'u1', 'u2', 'u3'],
-      dateISO: withOffset(6)
-    },
-    {
-      id: 'g2',
-      sessionId: 'demo',
-      amount: 198,
-      description: '晚餐食材',
-      payerId: 'u1',
-      participantIds: ['self', 'u1', 'u2', 'u3'],
-      dateISO: withOffset(2)
-    }
-  ]
+export const getJoinedGroups = (): GroupSession[] => {
+  return readStorage<GroupSession[]>(storageKeys.groupSessions, [])
 }
 
-export const getGroupSessions = (): GroupSession[] => {
-  const sessions = readStorage<GroupSession[]>(storageKeys.groupSessions, [])
-  if (sessions.length === 0 && demoDataEnabled) {
-    const demoSession = createDemoSession()
-    writeStorage(storageKeys.groupSessions, [demoSession])
-    return [demoSession]
-  }
-  return sessions
+export const getJoinedGroupById = (groupId: number) => {
+  return getJoinedGroups().find((item) => item.id === groupId)
 }
 
-export const addGroupSession = (title: string, members: GroupMember[]): GroupSession => {
-  const sessions = readStorage<GroupSession[]>(storageKeys.groupSessions, [])
-  const session: GroupSession = {
-    id: `group_${Date.now()}`,
-    title: title.trim() || '临时多人记账',
-    createdAt: new Date().toISOString(),
-    members
-  }
-  sessions.unshift(session)
-  writeStorage(storageKeys.groupSessions, sessions)
+export const saveJoinedGroup = (session: GroupSession) => {
+  const groups = getJoinedGroups()
+  const next = [session, ...groups.filter((item) => item.id !== session.id)]
+  writeStorage(storageKeys.groupSessions, next)
   return session
 }
 
-export const getGroupTransactions = (): GroupTransaction[] => {
-  const transactions = readStorage<GroupTransaction[]>(storageKeys.groupTransactions, [])
-  if (transactions.length === 0 && demoDataEnabled) {
-    const demo = createDemoTransactions()
-    writeStorage(storageKeys.groupTransactions, demo)
-    return demo
+export const removeJoinedGroup = (groupId: number) => {
+  const groups = getJoinedGroups().filter((item) => item.id !== groupId)
+  writeStorage(storageKeys.groupSessions, groups)
+}
+
+export const createGroup = async (title: string) => {
+  const data = await request<{ title: string }, GroupApiResponse>({
+    url: '/groups/create',
+    method: 'POST',
+    data: { title }
+  })
+  const session = saveJoinedGroup(toSession(data))
+  connectGroupSocket(session.id, session.wsPath)
+  return session
+}
+
+export const joinGroup = async (groupId: number) => {
+  const existing = getJoinedGroupById(groupId)
+  if (existing) {
+    connectGroupSocket(existing.id, existing.wsPath)
+    return existing
   }
-  return transactions
+  const data = await request<{ groupId: number }, GroupApiResponse>({
+    url: `/groups/join/${groupId}`,
+    method: 'POST',
+    data: { groupId }
+  })
+  const session = saveJoinedGroup(toSession(data))
+  connectGroupSocket(session.id, session.wsPath)
+  return session
 }
 
-export const getGroupTransactionsBySession = (sessionId: string): GroupTransaction[] => {
-  return getGroupTransactions().filter((item) => item.sessionId === sessionId)
+export const leaveGroup = async (groupId: number) => {
+  await request<Record<string, never>, GroupApiResponse>({
+    url: `/groups/leave/${groupId}`,
+    method: 'POST'
+  })
+  disconnectGroupSocket(groupId)
+  removeJoinedGroup(groupId)
 }
 
-export const addGroupTransaction = (input: Omit<GroupTransaction, 'id' | 'dateISO'>): GroupTransaction => {
-  const transactions = readStorage<GroupTransaction[]>(storageKeys.groupTransactions, [])
-  const transaction: GroupTransaction = {
-    ...input,
-    id: `gt_${Date.now()}`,
+export const kickGroupMember = async (groupId: number, userId: number) => {
+  await request<Record<string, never>, GroupApiResponse>({
+    url: `/groups/kick/${groupId}/${userId}`,
+    method: 'POST'
+  })
+}
+
+export const fetchSettlement = async (groupId: number) => {
+  return request<Record<string, never>, GroupSettlement>({
+    url: `/groups/settlement/${groupId}`,
+    method: 'GET'
+  })
+}
+
+export const getGroupExpenses = (groupId: number): GroupExpense[] => {
+  const all = readStorage<GroupExpense[]>(storageKeys.groupTransactions, [])
+  return all.filter((item) => item.groupId === groupId)
+}
+
+export const saveGroupExpense = (expense: GroupExpense) => {
+  const all = readStorage<GroupExpense[]>(storageKeys.groupTransactions, [])
+  const next = [expense, ...all.filter((item) => item.id !== expense.id)]
+  writeStorage(storageKeys.groupTransactions, next)
+}
+
+export const addLocalExpense = (groupId: number, payload: { amount: number; title?: string; remark?: string; userId?: number }) => {
+  const expense: GroupExpense = {
+    id: `local_${Date.now()}`,
+    groupId,
+    amount: payload.amount,
+    title: payload.title,
+    remark: payload.remark,
+    userId: payload.userId,
     dateISO: new Date().toISOString()
   }
-  transactions.unshift(transaction)
-  writeStorage(storageKeys.groupTransactions, transactions)
-  return transaction
+  saveGroupExpense(expense)
+  return expense
 }

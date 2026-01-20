@@ -2,7 +2,7 @@
   "miniprogramRoot": "dist/",
   "projectname": "bookkeeping-mini",
   "description": "Bookkeeping WeChat mini program",
-  "appid": "wxa1f119cda84b8641",
+  "appid": "wx7b17aea7d14de74b",
   "setting": {
     "urlCheck": true,
     "es6": false,
@@ -35,5 +35,6 @@
     "ignore": [],
     "include": []
   },
-  "editorSetting": {}
+  "editorSetting": {},
+  "libVersion": "3.13.1"
 }

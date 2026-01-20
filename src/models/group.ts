@@ -1,23 +1,31 @@
-export type GroupMember = {
-  id: string
-  name: string
-  avatar?: string
-  isSelf?: boolean
-}
-
 export type GroupSession = {
-  id: string
+  id: number
   title: string
-  createdAt: string
-  members: GroupMember[]
+  wsPath: string
+  joinedAt: string
 }
 
-export type GroupTransaction = {
+export type GroupExpense = {
   id: string
-  sessionId: string
+  groupId: number
   amount: number
-  description?: string
-  payerId: string
-  participantIds: string[]
+  title?: string
+  remark?: string
+  userId?: number
   dateISO: string
+}
+
+export type GroupSettlement = {
+  groupId: number
+  balances: Array<{
+    userId: number
+    totalPaid: number
+    shouldPay: number
+    netAmount: number
+  }>
+  transfers: Array<{
+    fromUserId: number
+    toUserId: number
+    amount: number
+  }>
 }

@@ -2,7 +2,7 @@
   "libVersion": "3.13.1",
   "projectname": "bookkeeping-mini",
   "setting": {
-    "urlCheck": true,
+    "urlCheck": false,
     "coverView": false,
     "lazyloadPlaceholderEnable": false,
     "skylineRenderEnable": false,
@@ -16,6 +16,6 @@
     "compileHotReLoad": true,
     "checkInvalidKey": true,
     "ignoreDevUnusedFiles": true,
-    "bigPackageSizeSupport": false
+    "bigPackageSizeSupport": true
   }
 }

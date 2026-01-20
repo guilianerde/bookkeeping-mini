@@ -1,5 +1,6 @@
 import Taro from '@tarojs/taro'
 import type { Result } from '../models/api'
+import { API_BASE_URL } from '../config/api'
 import { clearAuth, getAuthToken, redirectToLogin } from './authService'
 
 export type RequestOptions<T> = {
@@ -16,8 +17,10 @@ export const request = async <T, R = unknown>(options: RequestOptions<T>) => {
     throw new Error('AUTH_REQUIRED')
   }
 
+  const url = options.url.startsWith('http') ? options.url : `${API_BASE_URL}${options.url}`
+
   const res = await Taro.request<Result<R>>({
-    url: options.url,
+    url,
     method: options.method ?? 'GET',
     data: options.data,
     header: {

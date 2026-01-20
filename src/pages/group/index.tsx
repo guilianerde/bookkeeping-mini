@@ -1,130 +1,130 @@
 import { Button, Canvas, View, Text } from '@tarojs/components'
 import Taro, { useDidShow, useRouter, useShareAppMessage } from '@tarojs/taro'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Cell, SafeArea } from '@taroify/core'
 import '@taroify/core/index.scss'
 import '@taroify/core/safe-area/style'
 import './index.scss'
 import Card from '../../components/ui/Card'
 import PrimaryButton from '../../components/ui/PrimaryButton'
-import type { GroupSession, GroupTransaction, GroupMember } from '../../models/group'
-import { getGroupSessions, getGroupTransactionsBySession } from '../../services/groupService'
+import type { GroupExpense, GroupSession, GroupSettlement } from '../../models/group'
+import {
+  fetchSettlement,
+  getGroupExpenses,
+  getJoinedGroups,
+  joinGroup,
+  saveGroupExpense
+} from '../../services/groupService'
+import { onGroupMessage } from '../../services/groupWs'
 import { formatDate, formatTime } from '../../utils/format'
 import { useThemeClass } from '../../utils/theme'
-import { ensureLoginOrRedirect } from '../../services/authService'
-
-const currentUserId = 'self'
-
-type SettlementItem = {
-  from: GroupMember
-  to: GroupMember
-  amount: number
-}
-
-const buildMemberMap = (members: GroupMember[]) => new Map(members.map((member) => [member.id, member]))
-
-const calculateNetBalances = (members: GroupMember[], transactions: GroupTransaction[]) => {
-  const balances = new Map<string, number>()
-  members.forEach((member) => balances.set(member.id, 0))
-
-  transactions.forEach((item) => {
-    const share = item.amount / Math.max(item.participantIds.length, 1)
-    balances.set(item.payerId, (balances.get(item.payerId) ?? 0) + item.amount)
-    item.participantIds.forEach((participantId) => {
-      balances.set(participantId, (balances.get(participantId) ?? 0) - share)
-    })
-  })
-
-  return balances
-}
-
-const settleBalances = (members: GroupMember[], transactions: GroupTransaction[]) => {
-  const balances = calculateNetBalances(members, transactions)
-  const creditors: Array<{ id: string; amount: number }> = []
-  const debtors: Array<{ id: string; amount: number }> = []
-
-  balances.forEach((amount, id) => {
-    if (amount > 0.01) {
-      creditors.push({ id, amount })
-    } else if (amount < -0.01) {
-      debtors.push({ id, amount: Math.abs(amount) })
-    }
-  })
-
-  const settlements: Array<{ from: string; to: string; amount: number }> = []
-  let i = 0
-  let j = 0
-
-  while (i < debtors.length && j < creditors.length) {
-    const debtor = debtors[i]
-    const creditor = creditors[j]
-    const amount = Math.min(debtor.amount, creditor.amount)
-    settlements.push({ from: debtor.id, to: creditor.id, amount })
-    debtor.amount -= amount
-    creditor.amount -= amount
-    if (debtor.amount <= 0.01) i += 1
-    if (creditor.amount <= 0.01) j += 1
-  }
-
-  return settlements
-}
+import { ensureLoginOrRedirect, getAuthUserId } from '../../services/authService'
 
 export default function GroupPage() {
   const router = useRouter()
   const [session, setSession] = useState<GroupSession | null>(null)
-  const [transactions, setTransactions] = useState<GroupTransaction[]>([])
-  const [settlements, setSettlements] = useState<SettlementItem[]>([])
+  const [expenses, setExpenses] = useState<GroupExpense[]>([])
+  const [settlement, setSettlement] = useState<GroupSettlement | null>(null)
   const [posterSize, setPosterSize] = useState({ width: 1, height: 1 })
   const themeClass = useThemeClass()
 
   useDidShow(() => {
     if (!ensureLoginOrRedirect()) return
-    Taro.showShareMenu({ withShareTicket: true })
-    const sessions = getGroupSessions()
-    const current = sessions.find((item) => item.id === router.params?.id) ?? sessions[0]
-    if (!current) {
-      setSession(null)
-      setTransactions([])
-      setSettlements([])
-      return
+    const load = async () => {
+      const paramId = Number(router.params?.id)
+      let current: GroupSession | undefined
+      try {
+        if (paramId) {
+          current = await joinGroup(paramId)
+        } else {
+          const first = getJoinedGroups()[0]
+          current = first ? await joinGroup(first.id) : undefined
+        }
+      } catch (error) {
+        Taro.showToast({ title: '请先登录', icon: 'none' })
+        return
+      }
+
+      if (!current) {
+        setSession(null)
+        setExpenses([])
+        setSettlement(null)
+        return
+      }
+
+      setSession(current)
+      setExpenses(getGroupExpenses(current.id))
+      try {
+        const data = await fetchSettlement(current.id)
+        setSettlement(data)
+      } catch (error) {
+        // ignore settlement fetch errors on initial load
+      }
     }
-    setSession(current)
-    setTransactions(getGroupTransactionsBySession(current.id))
-    setSettlements([])
+
+    void load()
   })
 
-  const memberMap = useMemo(() => buildMemberMap(session?.members ?? []), [session])
+  useEffect(() => {
+    if (!session) return
+    const unsubscribe = onGroupMessage(session.id, (payload) => {
+      if (!payload) return
+      if (payload.type === 'settlement' && payload.settlement) {
+        setSettlement(payload.settlement)
+        return
+      }
+      if (payload.type === 'expense') {
+        const expense: GroupExpense = {
+          id: payload.id || `ws_${Date.now()}`,
+          groupId: session.id,
+          amount: Number(payload.amount ?? 0),
+          title: payload.title,
+          remark: payload.remark,
+          userId: payload.userId,
+          dateISO: payload.dateISO ?? new Date().toISOString()
+        }
+        saveGroupExpense(expense)
+        setExpenses((prev) => [expense, ...prev.filter((item) => item.id !== expense.id)])
+      }
+    })
 
-  const totalExpense = useMemo(
-    () => transactions.reduce((sum, item) => sum + item.amount, 0),
-    [transactions]
-  )
+    return () => unsubscribe()
+  }, [session])
 
-  const netBalances = useMemo(() => {
-    if (!session) return new Map()
-    return calculateNetBalances(session.members, transactions)
-  }, [session, transactions])
+  const currentUserId = getAuthUserId()
 
-  const currentNet = netBalances.get(currentUserId) ?? 0
+  const totalExpense = useMemo(() => {
+    if (settlement) {
+      return settlement.balances.reduce((sum, item) => sum + (item.totalPaid ?? 0), 0)
+    }
+    return expenses.reduce((sum, item) => sum + item.amount, 0)
+  }, [settlement, expenses])
+
+  const currentNet = useMemo(() => {
+    if (!settlement || currentUserId === undefined) return 0
+    return settlement.balances.find((item) => item.userId === currentUserId)?.netAmount ?? 0
+  }, [settlement, currentUserId])
+
   const netLabel = currentNet >= 0 ? '待收' : '待付'
 
-  const handleNewRecord = () => {
-    if (!session) return
-    Taro.navigateTo({ url: `/pages/group/record/index?id=${session.id}` })
-  }
+  const memberList = useMemo(() => {
+    if (settlement?.balances?.length) {
+      return settlement.balances.map((item) => ({
+        id: item.userId,
+        name: item.userId === currentUserId ? '我' : `用户${item.userId}`
+      }))
+    }
+    if (currentUserId !== undefined) {
+      return [{ id: currentUserId, name: '我' }]
+    }
+    return []
+  }, [settlement, currentUserId])
 
-  const handleSettle = () => {
-    if (!session) return
-    const result = settleBalances(session.members, transactions)
-    const items = result.map((item) => ({
-      from: memberMap.get(item.from) ?? { id: item.from, name: item.from },
-      to: memberMap.get(item.to) ?? { id: item.to, name: item.to },
-      amount: item.amount
-    }))
-    setSettlements(items)
-  }
+  const transfers = settlement?.transfers ?? []
 
-  const settlementHint = settlements.length ? `最少 ${settlements.length} 笔转账即可结清` : '点击完成计算最少转账次数'
+  const settlementHint = transfers.length
+    ? `已自动计算，最少 ${transfers.length} 笔转账即可结清`
+    : '当前无需结算'
 
   useShareAppMessage(() => {
     const roomId = session?.id ?? ''
@@ -135,10 +135,15 @@ export default function GroupPage() {
     }
   })
 
+  const handleNewRecord = () => {
+    if (!session) return
+    Taro.navigateTo({ url: `/pages/group/record/index?id=${session.id}` })
+  }
+
   const buildSettlementText = () => {
     const title = session?.title ?? '多人记账'
-    const lines = settlements.map(
-      (item) => `${item.from.name} → ${item.to.name} ¥${item.amount.toFixed(2)}`
+    const lines = transfers.map(
+      (item) => `${item.fromUserId} → ${item.toUserId} ¥${item.amount.toFixed(2)}`
     )
     return [
       `【${title}】结算清单`,
@@ -149,7 +154,7 @@ export default function GroupPage() {
   }
 
   const handleCopySettlement = async () => {
-    if (!settlements.length) {
+    if (!transfers.length) {
       Taro.showToast({ title: '暂无结算信息', icon: 'none' })
       return
     }
@@ -178,7 +183,7 @@ export default function GroupPage() {
   }
 
   const handleGeneratePoster = async () => {
-    if (!settlements.length) {
+    if (!transfers.length) {
       Taro.showToast({ title: '暂无结算信息', icon: 'none' })
       return
     }
@@ -188,8 +193,8 @@ export default function GroupPage() {
     const padding = 24
     const lineHeight = 36
     const headerHeight = 86
-    const lines = settlements.map(
-      (item) => `${item.from.name} → ${item.to.name} ¥${item.amount.toFixed(2)}`
+    const lines = transfers.map(
+      (item) => `${item.fromUserId} → ${item.toUserId} ¥${item.amount.toFixed(2)}`
     )
     const height = padding * 2 + headerHeight + lines.length * lineHeight + 48
 
@@ -270,8 +275,8 @@ export default function GroupPage() {
           <View className='member-strip'>
             <Text className='member-strip__label'>成员</Text>
             <View className='member-strip__avatars'>
-              {(session?.members ?? []).map((member) => (
-                <View className={`member-avatar ${member.isSelf ? 'member-avatar--self' : ''}`} key={member.id}>
+              {memberList.map((member) => (
+                <View className={`member-avatar ${member.name === '我' ? 'member-avatar--self' : ''}`} key={member.id}>
                   <Text>{member.name.slice(0, 1)}</Text>
                 </View>
               ))}
@@ -294,30 +299,32 @@ export default function GroupPage() {
                 <Text className='settle-card__title'>一键结算</Text>
                 <Text className='settle-card__hint'>{settlementHint}</Text>
               </View>
-              <View className='settle-card__action' hoverClass='press-opacity' onClick={handleSettle}>
-                <Text>点击完成</Text>
+              <View className='settle-card__action' hoverClass='press-opacity' onClick={handleGeneratePoster}>
+                <Text>生成长图</Text>
               </View>
             </View>
           </View>
         </Card>
 
         <Card title='多人流水' subtitle='不影响个人预算' className='group-list'>
-          {transactions.length === 0 ? (
+          {expenses.length === 0 ? (
             <View className='group-empty'>
               <Text className='group-empty__text'>暂无记账，开始添加第一笔。</Text>
             </View>
           ) : (
             <View className='group-transactions'>
-              {transactions.map((item) => (
+              {expenses.map((item) => (
                 <Cell key={item.id} className='group-transaction' clickable activeOpacity={0.7}>
                   <View className='group-transaction__left'>
                     <View className='group-transaction__icon'>👥</View>
                     <View className='group-transaction__meta'>
-                      <Text className='group-transaction__name'>{item.description || '多人记账'}</Text>
+                      <Text className='group-transaction__name'>{item.title || item.remark || '多人记账'}</Text>
                       <Text className='group-transaction__time'>
                         {formatDate(item.dateISO)} {formatTime(item.dateISO)}
                       </Text>
-                      <Text className='group-transaction__payer'>付款人：{memberMap.get(item.payerId)?.name ?? '成员'}</Text>
+                      {item.userId ? (
+                        <Text className='group-transaction__payer'>付款人：用户{item.userId}</Text>
+                      ) : null}
                     </View>
                   </View>
                   <View className='group-transaction__amount'>
@@ -331,14 +338,14 @@ export default function GroupPage() {
           )}
         </Card>
 
-        {settlements.length ? (
+        {transfers.length ? (
           <Card title='结算路径' subtitle='建议最少转账次数' className='settlement-card'>
             <View className='settlement-list'>
-              {settlements.map((item, index) => (
-                <View className='settlement-item' key={`${item.from.id}-${item.to.id}-${index}`}>
-                  <Text className='settlement-item__from'>{item.from.name}</Text>
+              {transfers.map((item, index) => (
+                <View className='settlement-item' key={`${item.fromUserId}-${item.toUserId}-${index}`}>
+                  <Text className='settlement-item__from'>用户{item.fromUserId}</Text>
                   <Text className='settlement-item__arrow'>→</Text>
-                  <Text className='settlement-item__to'>{item.to.name}</Text>
+                  <Text className='settlement-item__to'>用户{item.toUserId}</Text>
                   <View className='settlement-item__amount'>
                     <Text className='settlement-item__currency'>¥</Text>
                     <Text className='settlement-item__int'>{item.amount.toFixed(2)}</Text>
