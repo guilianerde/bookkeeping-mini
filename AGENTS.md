@@ -36,3 +36,28 @@
 ## Configuration Notes
 - Taro app configuration lives in `project.config.json` and `src/app.config.ts`.
 - Environment-specific settings go in `config/` and should avoid hard-coded secrets.
+
+## Runtime & API Integration
+- API base URL is defined in `src/config/api.ts` (`API_BASE_URL`). Set this per environment.
+- All HTTP requests go through `src/services/request.ts` and expect `Result<T>`; success codes include `0` and `200`.
+- Login flow is centralized in `src/services/authService.ts` and `src/pages/login/`.
+  - Use `ensureLoginOrRedirect()` before protected pages (see `src/app.ts`, `src/pages/group/index.tsx`).
+- WeChat requires legal domains for requests. In dev tools you can disable domain checks; production must whitelist domains in the WeChat console.
+
+## UI System & Styling
+- UI kit: Taroify (`@taroify/core`, `@taroify/icons`). Prefer component usage over hand-built UI.
+- Import styles on-demand for each Taroify component (avoid full bundle where possible).
+- Keep SCSS overrides scoped to page classes and tokens; avoid deep global overrides.
+
+## Data & Storage
+- Local storage keys live in `src/services/storage.ts` (if used by a feature).
+- Group (多人记账) data and WebSocket helpers live in `src/services/groupService.ts` and `src/services/groupWs.ts`.
+- `/groups/mine` is used for the group list; `/groups/final/{groupId}` is used for final (settled) detail rendering.
+
+## Feature Flags / Staging Behavior
+- Some features are intentionally hidden (e.g. 分摊人、同步到个人账本 in group record). Keep them off unless explicitly requested.
+- When adding test data, provide a single toggle entry point so it can be disabled for release.
+
+## Troubleshooting
+- If `connectSocket` returns a Promise, await it before calling `.onMessage` / `.send` (handled in `groupWs.ts`).
+- Sass warnings from dependencies (e.g. Taroify) are expected; avoid editing `node_modules`.

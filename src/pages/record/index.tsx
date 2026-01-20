@@ -196,6 +196,7 @@ export default function RecordPage() {
       setGroupTitle('')
       Taro.navigateTo({ url: `/pages/group/index?id=${session.id}` })
     } catch (error) {
+      console.log(error)
       Taro.showToast({ title: '创建失败，请重试', icon: 'none' })
     }
   }

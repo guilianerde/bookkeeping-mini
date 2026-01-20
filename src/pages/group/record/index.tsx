@@ -1,7 +1,7 @@
-import { View, Text, Input, Picker, Switch } from '@tarojs/components'
+import { View, Text, Input, Picker } from '@tarojs/components'
 import Taro, { useDidShow, useRouter } from '@tarojs/taro'
 import { useMemo, useState } from 'react'
-import { Cell, Checkbox, SafeArea } from '@taroify/core'
+import { SafeArea } from '@taroify/core'
 import '@taroify/core/index.scss'
 import '@taroify/core/safe-area/style'
 import './index.scss'
@@ -19,8 +19,6 @@ export default function GroupRecordPage() {
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
   const [payerId, setPayerId] = useState<number | null>(null)
-  const [participantIds, setParticipantIds] = useState<number[]>([])
-  const [syncToPersonal, setSyncToPersonal] = useState(false)
   const themeClass = useThemeClass()
   const currentUserId = getAuthUserId()
 
@@ -43,7 +41,6 @@ export default function GroupRecordPage() {
       setSession(current)
       const selfId = currentUserId ?? 0
       setPayerId(selfId)
-      setParticipantIds([selfId].filter((id) => id !== 0))
     }
     void load()
   })
@@ -58,25 +55,7 @@ export default function GroupRecordPage() {
   const payerIndex = Math.max(memberOptions.findIndex((member) => member.id === payerId), 0)
   const payerRange = memberOptions.length ? memberOptions.map((member) => member.name) : ['我']
 
-  const setParticipantChecked = (memberId: number, checked: boolean) => {
-    if (checked) {
-      if (!participantIds.includes(memberId)) {
-        setParticipantIds([...participantIds, memberId])
-      }
-      return
-    }
-    setParticipantIds(participantIds.filter((id) => id !== memberId))
-  }
-
-  const toggleParticipant = (memberId: number) => {
-    setParticipantChecked(memberId, !participantIds.includes(memberId))
-  }
-
-  const handleSelectAll = () => {
-    setParticipantIds(memberOptions.map((member) => member.id))
-  }
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const numericAmount = Number.parseFloat(amount)
     if (!numericAmount || numericAmount <= 0) {
       Taro.showToast({ title: '请输入正确金额', icon: 'none' })
@@ -87,18 +66,10 @@ export default function GroupRecordPage() {
       return
     }
 
-    const payerName = memberOptions.find((member) => member.id === payerId)?.name ?? '我'
-    const participantNames = memberOptions
-      .filter((member) => participantIds.includes(member.id))
-      .map((member) => member.name)
-      .join(',')
-
-    const remark = participantNames
-      ? `${description.trim() || '记账'} | 付款人:${payerName} 分摊:${participantNames}`
-      : description.trim()
+    const remark = description.trim()
 
     try {
-      sendGroupExpense(session.id, {
+      await sendGroupExpense(session.id, {
         type: 'expense',
         amount: numericAmount,
         title: description.trim() || '多人记账',
@@ -116,12 +87,7 @@ export default function GroupRecordPage() {
       userId: payerId ?? undefined
     })
 
-    if (syncToPersonal) {
-      // TODO: sync to personal ledger with category selection.
-      Taro.showToast({ title: '已记录，个人同步待接入', icon: 'none' })
-    } else {
-      Taro.showToast({ title: '已记录', icon: 'success' })
-    }
+    Taro.showToast({ title: '已记录', icon: 'success' })
 
     setAmount('')
     setDescription('')
@@ -169,39 +135,6 @@ export default function GroupRecordPage() {
               <Text className='picker-field__icon'>▾</Text>
             </View>
           </Picker>
-        </Card>
-
-        <Card title='分摊人' subtitle='默认全选'>
-          <View className='participant-header'>
-            <Text className='participant-header__hint'>选择参与分摊的成员</Text>
-            <Text className='participant-header__action' hoverClass='press-opacity' onClick={handleSelectAll}>全选</Text>
-          </View>
-          <View className='participant-list'>
-            {memberOptions.map((member) => (
-              <Cell key={member.id} className='participant-item' clickable activeOpacity={0.7} onClick={() => toggleParticipant(member.id)}>
-                <View className='participant-item__left'>
-                  <View className='participant-avatar participant-avatar--self'>
-                    <Text>{member.name.slice(0, 1)}</Text>
-                  </View>
-                  <Text className='participant-name'>{member.name}</Text>
-                </View>
-                <Checkbox
-                  checked={participantIds.includes(member.id)}
-                  onChange={(checked) => setParticipantChecked(member.id, checked)}
-                />
-              </Cell>
-            ))}
-          </View>
-        </Card>
-
-        <Card>
-          <View className='sync-row'>
-            <View className='sync-row__left'>
-              <Text className='sync-row__title'>同步到个人账本</Text>
-              <Text className='sync-row__desc'>手动选择后才会影响个人预算</Text>
-            </View>
-            <Switch checked={syncToPersonal} onChange={(event) => setSyncToPersonal(event.detail.value)} color='#4f7dff' />
-          </View>
         </Card>
 
         <PrimaryButton text='保存' onClick={handleSubmit} />

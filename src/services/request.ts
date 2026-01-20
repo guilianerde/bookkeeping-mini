@@ -5,7 +5,7 @@ import { clearAuth, getAuthToken, redirectToLogin } from './authService'
 
 export type RequestOptions<T> = {
   url: string
-  method?: Taro.request.Method
+  method?: keyof Taro.request.Method
   data?: T
   header?: Record<string, string>
 }
@@ -35,7 +35,8 @@ export const request = async <T, R = unknown>(options: RequestOptions<T>) => {
     throw new Error('AUTH_EXPIRED')
   }
 
-  if (!res.data || res.data.code !== 0) {
+  const successCodes = new Set([0, 200, '0', '200'])
+  if (!res.data || !successCodes.has(res.data.code)) {
     throw new Error(res.data?.message || '请求失败')
   }
 

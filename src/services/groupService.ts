@@ -1,12 +1,20 @@
 import { request } from './request'
 import { readStorage, storageKeys, writeStorage } from './storage'
-import type { GroupExpense, GroupSession, GroupSettlement } from '../models/group'
+import type { GroupExpense, GroupFinal, GroupSession, GroupSettlement } from '../models/group'
 import { connectGroupSocket, disconnectGroupSocket } from './groupWs'
 
 type GroupApiResponse = {
   groupId: number
   title: string
   wsPath: string
+}
+
+export type GroupSummary = {
+  groupId: number
+  title: string
+  time: string
+  totalAmount: number
+  participantCount: number
 }
 
 const toSession = (data: GroupApiResponse): GroupSession => ({
@@ -42,6 +50,7 @@ export const createGroup = async (title: string) => {
     method: 'POST',
     data: { title }
   })
+  console.log("data:::::::--",data)
   const session = saveJoinedGroup(toSession(data))
   connectGroupSocket(session.id, session.wsPath)
   return session
@@ -82,6 +91,20 @@ export const kickGroupMember = async (groupId: number, userId: number) => {
 export const fetchSettlement = async (groupId: number) => {
   return request<Record<string, never>, GroupSettlement>({
     url: `/groups/settlement/${groupId}`,
+    method: 'GET'
+  })
+}
+
+export const fetchMyGroups = async () => {
+  return request<Record<string, never>, GroupSummary[]>({
+    url: '/groups/mine',
+    method: 'GET'
+  })
+}
+
+export const fetchGroupFinal = async (groupId: number) => {
+  return request<Record<string, never>, GroupFinal>({
+    url: `/groups/final/${groupId}`,
     method: 'GET'
   })
 }

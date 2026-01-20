@@ -7,8 +7,9 @@ import '@taroify/core/safe-area/style'
 import './index.scss'
 import Card from '../../components/ui/Card'
 import PrimaryButton from '../../components/ui/PrimaryButton'
-import type { GroupExpense, GroupSession, GroupSettlement } from '../../models/group'
+import type { GroupExpense, GroupFinal, GroupSession, GroupSettlement } from '../../models/group'
 import {
+  fetchGroupFinal,
   fetchSettlement,
   getGroupExpenses,
   getJoinedGroups,
@@ -25,6 +26,7 @@ export default function GroupPage() {
   const [session, setSession] = useState<GroupSession | null>(null)
   const [expenses, setExpenses] = useState<GroupExpense[]>([])
   const [settlement, setSettlement] = useState<GroupSettlement | null>(null)
+  const [finalDetail, setFinalDetail] = useState<GroupFinal | null>(null)
   const [posterSize, setPosterSize] = useState({ width: 1, height: 1 })
   const themeClass = useThemeClass()
 
@@ -35,6 +37,36 @@ export default function GroupPage() {
       let current: GroupSession | undefined
       try {
         if (paramId) {
+          try {
+            const finalData = await fetchGroupFinal(paramId)
+            if (finalData && finalData.status === 1) {
+              setFinalDetail(finalData)
+              setSettlement(finalData.settlement)
+              const finalExpenses = finalData.members.flatMap((member) =>
+                member.expenses.map((expense, index) => ({
+                  id: `final_${paramId}_${member.userId}_${index}`,
+                  groupId: paramId,
+                  amount: Number(expense.amount ?? 0),
+                  title: expense.title,
+                  remark: expense.remark,
+                  userId: member.userId,
+                  dateISO: expense.createTime || finalData.endTime || new Date().toISOString()
+                }))
+              )
+              finalExpenses.sort((a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime())
+              setExpenses(finalExpenses)
+              setSession({
+                id: finalData.groupId,
+                title: finalData.title,
+                wsPath: '',
+                joinedAt: finalData.endTime ?? new Date().toISOString()
+              })
+              return
+            }
+          } catch (error) {
+            // ignore final fetch errors, fallback to realtime room join
+          }
+
           current = await joinGroup(paramId)
         } else {
           const first = getJoinedGroups()[0]
@@ -52,6 +84,7 @@ export default function GroupPage() {
         return
       }
 
+      setFinalDetail(null)
       setSession(current)
       setExpenses(getGroupExpenses(current.id))
       try {
@@ -66,7 +99,7 @@ export default function GroupPage() {
   })
 
   useEffect(() => {
-    if (!session) return
+    if (!session || finalDetail) return
     const unsubscribe = onGroupMessage(session.id, (payload) => {
       if (!payload) return
       if (payload.type === 'settlement' && payload.settlement) {

@@ -6,8 +6,10 @@ import '@taroify/core/index.scss'
 import '@taroify/core/safe-area/style'
 import './index.scss'
 import type { Transaction } from '../../models/transaction'
+import type { GroupSummary } from '../../services/groupService'
 import { getTransactions } from '../../services/transactionService'
 import { getCategories } from '../../services/categoryService'
+import { fetchMyGroups } from '../../services/groupService'
 import { formatDate, formatTime } from '../../utils/format'
 import { getCategoryById } from '../../models/types'
 import { useThemeClass } from '../../utils/theme'
@@ -17,14 +19,25 @@ import { exportCSV, exportJSON, showExportResult } from '../../utils/export'
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [groupRecords, setGroupRecords] = useState<GroupSummary[]>([])
   const [query, setQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL')
   const [monthIndex, setMonthIndex] = useState(0)
+  const [ledgerTab, setLedgerTab] = useState<'personal' | 'group'>('personal')
   const themeClass = useThemeClass()
 
   useDidShow(() => {
-    getCategories()
-    setTransactions(getTransactions())
+    const load = async () => {
+      getCategories()
+      setTransactions(getTransactions())
+      try {
+        const records = await fetchMyGroups()
+        setGroupRecords(records ?? [])
+      } catch (error) {
+        setGroupRecords([])
+      }
+    }
+    void load()
   })
 
   const monthOptions = useMemo(() => {
@@ -120,6 +133,19 @@ export default function TransactionsPage() {
   const balanceParts = formatCurrencyParts(monthBalanceTotal)
   const filteredParts = formatCurrencyParts(filteredTotal)
 
+  const groupRecordsView = useMemo(() => {
+    return groupRecords
+      .map((record) => ({
+        id: record.groupId,
+        title: record.title,
+        time: `${formatDate(record.time)} ${formatTime(record.time)}`,
+        timeISO: record.time,
+        totalAmount: record.totalAmount,
+        memberCount: record.participantCount
+      }))
+      .sort((a, b) => new Date(b.timeISO).getTime() - new Date(a.timeISO).getTime())
+  }, [groupRecords])
+
   const categoryToneMap: Record<number, string> = {
     1: 'food',
     2: 'shop',
@@ -208,177 +234,228 @@ export default function TransactionsPage() {
           <Text className="page__subtitle">筛选与搜索账单</Text>
         </View>
 
-        <Card className="filters-card">
-          <View className="filters__row">
-            <View className="chip-group">
-              <View
-                className={`chip ${typeFilter === 'ALL' ? 'chip--active' : ''}`}
-                hoverClass="press-opacity"
-                onClick={() => handleTypeChange('ALL')}
-              >
-                <Text>全部</Text>
-              </View>
-              <View
-                className={`chip ${typeFilter === 'EXPENSE' ? 'chip--active' : ''}`}
-                hoverClass="press-opacity"
-                onClick={() => handleTypeChange('EXPENSE')}
-              >
-                <Text>支出</Text>
-              </View>
-              <View
-                className={`chip ${typeFilter === 'INCOME' ? 'chip--active' : ''}`}
-                hoverClass="press-opacity"
-                onClick={() => handleTypeChange('INCOME')}
-              >
-                <Text>收入</Text>
-              </View>
-            </View>
-
-            <Picker mode="selector" range={monthOptions} value={monthIndex} onChange={handleMonthChange}>
-              <View className="month-picker" hoverClass="press-opacity">
-                <Text className="month-picker__label">{selectedMonth}</Text>
-                <Text className="month-picker__icon">▾</Text>
-              </View>
-            </Picker>
+        <View className="ledger-tabs">
+          <View
+            className={`ledger-tab ${ledgerTab === 'personal' ? 'ledger-tab--active' : ''}`}
+            hoverClass="press-opacity"
+            onClick={() => setLedgerTab('personal')}
+          >
+            <Text>明细</Text>
           </View>
-
-          <View className="filters__row">
-            <Input
-              className="search-input"
-              value={query}
-              onInput={(event) => setQuery(event.detail.value)}
-              placeholder="搜索分类或备注"
-              placeholderClass="search-input__placeholder"
-            />
-            <Text className="search-clear" hoverClass="press-opacity" onClick={handleClearSearch}>
-              清空
-            </Text>
+          <View
+            className={`ledger-tab ${ledgerTab === 'group' ? 'ledger-tab--active' : ''}`}
+            hoverClass="press-opacity"
+            onClick={() => setLedgerTab('group')}
+          >
+            <Text>多人记账</Text>
           </View>
-        </Card>
+        </View>
 
-        <Card title="月度汇总" subtitle={selectedMonth} className="summary-card" actionText="导出" onAction={handleExport}>
-          <View className="summary-grid">
-            <View className="summary-item">
-              <Text className="summary-item__label">收入</Text>
-              <View className="summary-amount summary-amount--income">
-                <Text className="summary-amount__currency">¥</Text>
-                <Text className="summary-amount__int">{incomeParts.intPart}</Text>
-                <Text className="summary-amount__dec">.{incomeParts.decPart}</Text>
-              </View>
-            </View>
-            <View className="summary-item">
-              <Text className="summary-item__label">支出</Text>
-              <View className="summary-amount summary-amount--expense">
-                <Text className="summary-amount__currency">¥</Text>
-                <Text className="summary-amount__int">{expenseParts.intPart}</Text>
-                <Text className="summary-amount__dec">.{expenseParts.decPart}</Text>
-              </View>
-            </View>
-            <View className="summary-item">
-              <Text className="summary-item__label">结余</Text>
-              <View
-                className={`summary-amount ${monthBalanceTotal >= 0 ? 'summary-amount--income' : 'summary-amount--expense'}`}
-              >
-                {monthBalanceTotal < 0 ? <Text className="summary-amount__sign">-</Text> : null}
-                <Text className="summary-amount__currency">¥</Text>
-                <Text className="summary-amount__int">{balanceParts.intPart}</Text>
-                <Text className="summary-amount__dec">.{balanceParts.decPart}</Text>
-              </View>
-            </View>
-          </View>
-          <View className="summary-footer">
-            <Text className="summary-footer__text">筛选后合计</Text>
-            <View
-              className={`summary-footer__value summary-amount ${filteredTotal >= 0 ? 'summary-footer__value--positive' : 'summary-footer__value--negative'}`}
-            >
-              {filteredTotal < 0 ? <Text className="summary-amount__sign">-</Text> : null}
-              <Text className="summary-amount__currency">¥</Text>
-              <Text className="summary-amount__int">{filteredParts.intPart}</Text>
-              <Text className="summary-amount__dec">.{filteredParts.decPart}</Text>
-            </View>
-            <Text className="summary-footer__count">{filtered.length} 笔</Text>
-          </View>
-        </Card>
+        {ledgerTab === 'personal' ? (
+          <>
+            <Card className="filters-card">
+              <View className="filters__row">
+                <View className="chip-group">
+                  <View
+                    className={`chip ${typeFilter === 'ALL' ? 'chip--active' : ''}`}
+                    hoverClass="press-opacity"
+                    onClick={() => handleTypeChange('ALL')}
+                  >
+                    <Text>全部</Text>
+                  </View>
+                  <View
+                    className={`chip ${typeFilter === 'EXPENSE' ? 'chip--active' : ''}`}
+                    hoverClass="press-opacity"
+                    onClick={() => handleTypeChange('EXPENSE')}
+                  >
+                    <Text>支出</Text>
+                  </View>
+                  <View
+                    className={`chip ${typeFilter === 'INCOME' ? 'chip--active' : ''}`}
+                    hoverClass="press-opacity"
+                    onClick={() => handleTypeChange('INCOME')}
+                  >
+                    <Text>收入</Text>
+                  </View>
+                </View>
 
-        {filtered.length === 0 ? (
-          <EmptyState text="暂无记录，调整筛选或去记一笔。" />
+                <Picker mode="selector" range={monthOptions} value={monthIndex} onChange={handleMonthChange}>
+                  <View className="month-picker" hoverClass="press-opacity">
+                    <Text className="month-picker__label">{selectedMonth}</Text>
+                    <Text className="month-picker__icon">▾</Text>
+                  </View>
+                </Picker>
+              </View>
+
+              <View className="filters__row">
+                <Input
+                  className="search-input"
+                  value={query}
+                  onInput={(event) => setQuery(event.detail.value)}
+                  placeholder="搜索分类或备注"
+                  placeholderClass="search-input__placeholder"
+                />
+                <Text className="search-clear" hoverClass="press-opacity" onClick={handleClearSearch}>
+                  清空
+                </Text>
+              </View>
+            </Card>
+
+            <Card title="月度汇总" subtitle={selectedMonth} className="summary-card" actionText="导出" onAction={handleExport}>
+              <View className="summary-grid">
+                <View className="summary-item">
+                  <Text className="summary-item__label">收入</Text>
+                  <View className="summary-amount summary-amount--income">
+                    <Text className="summary-amount__currency">¥</Text>
+                    <Text className="summary-amount__int">{incomeParts.intPart}</Text>
+                    <Text className="summary-amount__dec">.{incomeParts.decPart}</Text>
+                  </View>
+                </View>
+                <View className="summary-item">
+                  <Text className="summary-item__label">支出</Text>
+                  <View className="summary-amount summary-amount--expense">
+                    <Text className="summary-amount__currency">¥</Text>
+                    <Text className="summary-amount__int">{expenseParts.intPart}</Text>
+                    <Text className="summary-amount__dec">.{expenseParts.decPart}</Text>
+                  </View>
+                </View>
+                <View className="summary-item">
+                  <Text className="summary-item__label">结余</Text>
+                  <View
+                    className={`summary-amount ${monthBalanceTotal >= 0 ? 'summary-amount--income' : 'summary-amount--expense'}`}
+                  >
+                    {monthBalanceTotal < 0 ? <Text className="summary-amount__sign">-</Text> : null}
+                    <Text className="summary-amount__currency">¥</Text>
+                    <Text className="summary-amount__int">{balanceParts.intPart}</Text>
+                    <Text className="summary-amount__dec">.{balanceParts.decPart}</Text>
+                  </View>
+                </View>
+              </View>
+              <View className="summary-footer">
+                <Text className="summary-footer__text">筛选后合计</Text>
+                <View
+                  className={`summary-footer__value summary-amount ${filteredTotal >= 0 ? 'summary-footer__value--positive' : 'summary-footer__value--negative'}`}
+                >
+                  {filteredTotal < 0 ? <Text className="summary-amount__sign">-</Text> : null}
+                  <Text className="summary-amount__currency">¥</Text>
+                  <Text className="summary-amount__int">{filteredParts.intPart}</Text>
+                  <Text className="summary-amount__dec">.{filteredParts.decPart}</Text>
+                </View>
+                <Text className="summary-footer__count">{filtered.length} 笔</Text>
+              </View>
+            </Card>
+
+            {filtered.length === 0 ? (
+              <EmptyState text="暂无记录，调整筛选或去记一笔。" />
+            ) : (
+              <View className="transaction-list">
+                {groupedByDate.map((group) => {
+                  const dayIncome = group.items
+                    .filter((item) => item.type === 'INCOME')
+                    .reduce((sum, item) => sum + item.amount, 0)
+                  const dayExpense = group.items
+                    .filter((item) => item.type === 'EXPENSE')
+                    .reduce((sum, item) => sum + item.amount, 0)
+                  const dayBalance = dayIncome - dayExpense
+                  const dayIncomeParts = getAmountParts(dayIncome, 'INCOME')
+                  const dayExpenseParts = getAmountParts(dayExpense, 'EXPENSE')
+                  const dayBalanceParts = formatCurrencyParts(dayBalance)
+                  return (
+                    <Card className="transaction-group" key={group.date}>
+                      <View className="transaction-group__header">
+                        <Text className="transaction-group__date">{group.date}</Text>
+                        <View className="transaction-group__summary">
+                          <View className="transaction-summary transaction-summary--income">
+                            <Text className="transaction-summary__sign">{dayIncomeParts.sign}</Text>
+                            <Text className="transaction-summary__currency">¥</Text>
+                            <Text className="transaction-summary__int">{dayIncomeParts.intPart}</Text>
+                            <Text className="transaction-summary__dec">.{dayIncomeParts.decPart}</Text>
+                          </View>
+                          <View className="transaction-summary transaction-summary--expense">
+                            <Text className="transaction-summary__sign">{dayExpenseParts.sign}</Text>
+                            <Text className="transaction-summary__currency">¥</Text>
+                            <Text className="transaction-summary__int">{dayExpenseParts.intPart}</Text>
+                            <Text className="transaction-summary__dec">.{dayExpenseParts.decPart}</Text>
+                          </View>
+                          <View
+                            className={`transaction-summary ${dayBalance >= 0 ? 'transaction-summary--income' : 'transaction-summary--expense'}`}
+                          >
+                            {dayBalance < 0 ? <Text className="transaction-summary__sign">-</Text> : <Text className="transaction-summary__sign">+</Text>}
+                            <Text className="transaction-summary__currency">¥</Text>
+                            <Text className="transaction-summary__int">{dayBalanceParts.intPart}</Text>
+                            <Text className="transaction-summary__dec">.{dayBalanceParts.decPart}</Text>
+                          </View>
+                        </View>
+                      </View>
+                      <View className="transaction-group__list">
+                        {group.items.map((item) => {
+                          const category = getCategoryById(item.categoryId)
+                          const amountParts = getAmountParts(item.amount, item.type)
+                          const iconClass = categoryColorMap[getCategoryTone(category?.id)] ?? ''
+                          return (
+                            <Cell
+                              key={item.id}
+                              className="transaction-item"
+                              clickable
+                              hoverClass="press-opacity"
+                              activeOpacity={0.7}
+                            >
+                              <View className="transaction-item__left">
+                                <View className={`transaction-item__icon ${iconClass}`}>{category?.icon ?? '🧾'}</View>
+                                <View className="transaction-item__meta">
+                                  <Text className="transaction-item__name">{category?.desc ?? '未分类'}</Text>
+                                  <Text className="transaction-item__time">{formatTime(item.dateISO)}</Text>
+                                  {item.description ? (
+                                    <Text className="transaction-item__desc">{item.description}</Text>
+                                  ) : null}
+                                </View>
+                              </View>
+                              <View className={`transaction-amount ${item.type === 'INCOME' ? 'transaction-amount--income' : 'transaction-amount--expense'}`}>
+                                <Text className="transaction-amount__sign">{amountParts.sign}</Text>
+                                <Text className="transaction-amount__currency">¥</Text>
+                                <Text className="transaction-amount__int">{amountParts.intPart}</Text>
+                                <Text className="transaction-amount__dec">.{amountParts.decPart}</Text>
+                              </View>
+                            </Cell>
+                          )
+                        })}
+                      </View>
+                    </Card>
+                  )
+                })}
+              </View>
+            )}
+          </>
         ) : (
-          <View className="transaction-list">
-            {groupedByDate.map((group) => {
-              const dayIncome = group.items
-                .filter((item) => item.type === 'INCOME')
-                .reduce((sum, item) => sum + item.amount, 0)
-              const dayExpense = group.items
-                .filter((item) => item.type === 'EXPENSE')
-                .reduce((sum, item) => sum + item.amount, 0)
-              const dayBalance = dayIncome - dayExpense
-              const dayIncomeParts = getAmountParts(dayIncome, 'INCOME')
-              const dayExpenseParts = getAmountParts(dayExpense, 'EXPENSE')
-              const dayBalanceParts = formatCurrencyParts(dayBalance)
-              return (
-                <Card className="transaction-group" key={group.date}>
-                  <View className="transaction-group__header">
-                    <Text className="transaction-group__date">{group.date}</Text>
-                    <View className="transaction-group__summary">
-                      <View className="transaction-summary transaction-summary--income">
-                        <Text className="transaction-summary__sign">{dayIncomeParts.sign}</Text>
-                        <Text className="transaction-summary__currency">¥</Text>
-                        <Text className="transaction-summary__int">{dayIncomeParts.intPart}</Text>
-                        <Text className="transaction-summary__dec">.{dayIncomeParts.decPart}</Text>
-                      </View>
-                      <View className="transaction-summary transaction-summary--expense">
-                        <Text className="transaction-summary__sign">{dayExpenseParts.sign}</Text>
-                        <Text className="transaction-summary__currency">¥</Text>
-                        <Text className="transaction-summary__int">{dayExpenseParts.intPart}</Text>
-                        <Text className="transaction-summary__dec">.{dayExpenseParts.decPart}</Text>
-                      </View>
-                      <View
-                        className={`transaction-summary ${dayBalance >= 0 ? 'transaction-summary--income' : 'transaction-summary--expense'}`}
-                      >
-                        {dayBalance < 0 ? <Text className="transaction-summary__sign">-</Text> : <Text className="transaction-summary__sign">+</Text>}
-                        <Text className="transaction-summary__currency">¥</Text>
-                        <Text className="transaction-summary__int">{dayBalanceParts.intPart}</Text>
-                        <Text className="transaction-summary__dec">.{dayBalanceParts.decPart}</Text>
-                      </View>
+          <Card title="多人记账记录" subtitle="你参与的多人记账房间" className="group-records">
+            {groupRecordsView.length === 0 ? (
+              <View className="group-records__empty">
+                <Text className="group-records__empty-text">暂无多人记账记录</Text>
+              </View>
+            ) : (
+              <View className="group-records__list">
+                {groupRecordsView.map((record) => (
+                  <Cell
+                    key={record.id}
+                    className="group-record"
+                    clickable
+                    hoverClass="press-opacity"
+                    activeOpacity={0.7}
+                    onClick={() => Taro.navigateTo({ url: `/pages/group/index?id=${record.id}` })}
+                  >
+                    <View className="group-record__main">
+                      <Text className="group-record__title">{record.title}</Text>
+                      <Text className="group-record__time">{record.time}</Text>
                     </View>
-                  </View>
-                  <View className="transaction-group__list">
-                    {group.items.map((item) => {
-                      const category = getCategoryById(item.categoryId)
-                      const amountParts = getAmountParts(item.amount, item.type)
-                      const iconClass = categoryColorMap[getCategoryTone(category?.id)] ?? ''
-                      return (
-                        <Cell
-                          key={item.id}
-                          className="transaction-item"
-                          clickable
-                          hoverClass="press-opacity"
-                          activeOpacity={0.7}
-                        >
-                          <View className="transaction-item__left">
-                            <View className={`transaction-item__icon ${iconClass}`}>{category?.icon ?? '🧾'}</View>
-                            <View className="transaction-item__meta">
-                              <Text className="transaction-item__name">{category?.desc ?? '未分类'}</Text>
-                              <Text className="transaction-item__time">{formatTime(item.dateISO)}</Text>
-                              {item.description ? (
-                                <Text className="transaction-item__desc">{item.description}</Text>
-                              ) : null}
-                            </View>
-                          </View>
-                          <View className={`transaction-amount ${item.type === 'INCOME' ? 'transaction-amount--income' : 'transaction-amount--expense'}`}>
-                            <Text className="transaction-amount__sign">{amountParts.sign}</Text>
-                            <Text className="transaction-amount__currency">¥</Text>
-                            <Text className="transaction-amount__int">{amountParts.intPart}</Text>
-                            <Text className="transaction-amount__dec">.{amountParts.decPart}</Text>
-                          </View>
-                        </Cell>
-                      )
-                    })}
-                  </View>
-                </Card>
-              )
-            })}
-          </View>
+                    <View className="group-record__meta">
+                      <Text className="group-record__amount">¥{record.totalAmount.toFixed(2)}</Text>
+                      <Text className="group-record__members">{record.memberCount} 人</Text>
+                    </View>
+                  </Cell>
+                ))}
+              </View>
+            )}
+          </Card>
         )}
       </View>
       <SafeArea position="bottom" />

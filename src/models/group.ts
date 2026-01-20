@@ -29,3 +29,26 @@ export type GroupSettlement = {
     amount: number
   }>
 }
+
+export type GroupFinalExpense = {
+  amount: number
+  title?: string
+  remark?: string
+  expenseType?: number
+  createTime: string
+}
+
+export type GroupFinalMember = {
+  userId: number
+  joinTime: string
+  expenses: GroupFinalExpense[]
+}
+
+export type GroupFinal = {
+  groupId: number
+  title: string
+  status: number
+  endTime?: string
+  members: GroupFinalMember[]
+  settlement: GroupSettlement
+}
