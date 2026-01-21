@@ -234,14 +234,15 @@ export default function TransactionsPage() {
           <Text className="page__subtitle">筛选与搜索账单</Text>
         </View>
 
-        <View className="ledger-tabs">
-          <View
+       <View className="ledger-tabs">
+         {false && ( <View
             className={`ledger-tab ${ledgerTab === 'personal' ? 'ledger-tab--active' : ''}`}
             hoverClass="press-opacity"
             onClick={() => setLedgerTab('personal')}
           >
             <Text>明细</Text>
           </View>
+          )}
           <View
             className={`ledger-tab ${ledgerTab === 'group' ? 'ledger-tab--active' : ''}`}
             hoverClass="press-opacity"
@@ -251,7 +252,7 @@ export default function TransactionsPage() {
           </View>
         </View>
 
-        {ledgerTab === 'personal' ? (
+        {false && (ledgerTab === 'personal') ? (
           <>
             <Card className="filters-card">
               <View className="filters__row">

@@ -291,13 +291,15 @@ export default function RecordPage() {
           </View>
         </Card>
 
-        <View className='section-head'>
+        {false && (<View className='section-head' hidden>
           <Text className='section-head__title'>最近记录</Text>
           <Text className='section-head__action' hoverClass='press-opacity' onClick={handleViewAll}>
             查看全部
           </Text>
         </View>
-        <Card className='records-group'>
+        )}
+        {false && (
+          <Card className='records-group' hidden>
           {recentTransactions.length === 0 ? (
             <View className='records-empty'>
               <Empty description='暂无记录' />
@@ -329,6 +331,7 @@ export default function RecordPage() {
             })
           )}
         </Card>
+        )}
       </View>
       <SafeArea position='bottom' />
       <Popup
