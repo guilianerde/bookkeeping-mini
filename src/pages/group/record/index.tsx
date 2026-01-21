@@ -76,6 +76,7 @@ export default function GroupRecordPage() {
         remark
       })
     } catch (error) {
+      console.log(error)
       Taro.showToast({ title: '连接未建立，请稍后重试', icon: 'none' })
       return
     }

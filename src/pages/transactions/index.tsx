@@ -141,7 +141,8 @@ export default function TransactionsPage() {
         time: `${formatDate(record.time)} ${formatTime(record.time)}`,
         timeISO: record.time,
         totalAmount: record.totalAmount,
-        memberCount: record.participantCount
+        memberCount: record.participantCount,
+        status: record.status
       }))
       .sort((a, b) => new Date(b.timeISO).getTime() - new Date(a.timeISO).getTime())
   }, [groupRecords])

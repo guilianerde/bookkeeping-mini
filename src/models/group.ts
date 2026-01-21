@@ -12,6 +12,8 @@ export type GroupExpense = {
   title?: string
   remark?: string
   userId?: number
+  userName?: string
+  userAvatar?: string
   dateISO: string
 }
 
@@ -40,6 +42,8 @@ export type GroupFinalExpense = {
 
 export type GroupFinalMember = {
   userId: number
+  name?: string
+  avatar?: string
   joinTime: string
   expenses: GroupFinalExpense[]
 }

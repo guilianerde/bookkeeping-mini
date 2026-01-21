@@ -15,6 +15,7 @@ export type GroupSummary = {
   time: string
   totalAmount: number
   participantCount: number
+  status: 0 | 1
 }
 
 const toSession = (data: GroupApiResponse): GroupSession => ({

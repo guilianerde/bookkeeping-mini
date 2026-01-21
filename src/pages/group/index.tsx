@@ -1,4 +1,4 @@
-import { Button, Canvas, View, Text } from '@tarojs/components'
+import { Button, Canvas, Image, View, Text } from '@tarojs/components'
 import Taro, { useDidShow, useRouter, useShareAppMessage } from '@tarojs/taro'
 import { useEffect, useMemo, useState } from 'react'
 import { Cell, SafeArea } from '@taroify/core'
@@ -50,6 +50,8 @@ export default function GroupPage() {
                   title: expense.title,
                   remark: expense.remark,
                   userId: member.userId,
+                  userName: member.name,
+                  userAvatar: member.avatar,
                   dateISO: expense.createTime || finalData.endTime || new Date().toISOString()
                 }))
               )
@@ -86,7 +88,26 @@ export default function GroupPage() {
 
       setFinalDetail(null)
       setSession(current)
-      setExpenses(getGroupExpenses(current.id))
+      if ( (getGroupExpenses(current.id)?? []).length  == 0 ){
+        const finalData = await fetchGroupFinal(paramId)
+        const finalExpenses = finalData.members.flatMap((member) =>
+          member.expenses.map((expense, index) => ({
+            id: `final_${paramId}_${member.userId}_${index}`,
+            groupId: paramId,
+            amount: Number(expense.amount ?? 0),
+            title: expense.title,
+            remark: expense.remark,
+            userId: member.userId,
+            userName: member.name,
+            userAvatar: member.avatar,
+            dateISO: expense.createTime || finalData.endTime || new Date().toISOString()
+          }))
+        )
+        finalExpenses.sort((a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime())
+        setExpenses(finalExpenses)
+      }else {
+        setExpenses(getGroupExpenses(current.id))
+      }
       try {
         const data = await fetchSettlement(current.id)
         setSettlement(data)
@@ -349,14 +370,22 @@ export default function GroupPage() {
               {expenses.map((item) => (
                 <Cell key={item.id} className='group-transaction' clickable activeOpacity={0.7}>
                   <View className='group-transaction__left'>
-                    <View className='group-transaction__icon'>👥</View>
+                    <View className='group-transaction__icon'>
+                      {item.userAvatar ? (
+                        <Image className='group-transaction__avatar' src={item.userAvatar} mode='aspectFill' />
+                      ) : (
+                        <Text>{(item.userName || `用户${item.userId ?? ''}` || '👥').slice(0, 1)}</Text>
+                      )}
+                    </View>
                     <View className='group-transaction__meta'>
                       <Text className='group-transaction__name'>{item.title || item.remark || '多人记账'}</Text>
                       <Text className='group-transaction__time'>
                         {formatDate(item.dateISO)} {formatTime(item.dateISO)}
                       </Text>
-                      {item.userId ? (
-                        <Text className='group-transaction__payer'>付款人：用户{item.userId}</Text>
+                      {(item.userId || item.userName) ? (
+                        <Text className='group-transaction__payer'>
+                          付款人：{item.userName ?? `用户${item.userId}`}
+                        </Text>
                       ) : null}
                     </View>
                   </View>

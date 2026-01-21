@@ -243,6 +243,12 @@
   flex-shrink: 0;
 }
 
+.group-transaction__avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 16rpx;
+}
+
 .group-transaction__meta {
   display: flex;
   flex-direction: column;
