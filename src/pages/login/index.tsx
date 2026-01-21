@@ -7,7 +7,8 @@ import { loginWithWeChat } from '../../services/authService'
 const tabPages = new Set([
   '/pages/record/index',
   '/pages/transactions/index',
-  '/pages/analytics/index',
+  // TODO: v1 暂时隐藏分析页
+  // '/pages/analytics/index',
   '/pages/settings/index'
 ])
 

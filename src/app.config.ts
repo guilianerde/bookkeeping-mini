@@ -3,7 +3,8 @@ export default defineAppConfig({
     'pages/record/index',
     'pages/login/index',
     'pages/transactions/index',
-    'pages/analytics/index',
+    // TODO: v1 暂时隐藏分析页
+    // 'pages/analytics/index',
     'pages/settings/index',
     'pages/record/quick/index',
     'pages/record/voice/index',
@@ -34,12 +35,13 @@ export default defineAppConfig({
         iconPath: 'assets/tabbar/transactions.png',
         selectedIconPath: 'assets/tabbar/transactions-active.png'
       },
-      {
-        pagePath: 'pages/analytics/index',
-        text: '分析',
-        iconPath: 'assets/tabbar/analytics.png',
-        selectedIconPath: 'assets/tabbar/analytics-active.png'
-      },
+      // TODO: v1 暂时隐藏分析页
+      // {
+      //   pagePath: 'pages/analytics/index',
+      //   text: '分析',
+      //   iconPath: 'assets/tabbar/analytics.png',
+      //   selectedIconPath: 'assets/tabbar/analytics-active.png'
+      // },
       {
         pagePath: 'pages/settings/index',
         text: '设置',

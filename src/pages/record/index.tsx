@@ -1,8 +1,7 @@
 import { View, Text, Input } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Cell, Empty, Flex, Popup, SafeArea } from '@taroify/core'
-import { ArrowDown, ArrowUp } from '@taroify/icons'
+import { useState } from 'react'
+import { Popup, SafeArea } from '@taroify/core'
 import '@taroify/icons/index.scss'
 import '@taroify/core/index.scss'
 import '@taroify/core/safe-area/style'
@@ -10,179 +9,177 @@ import './index.scss'
 import Card from '../../components/ui/Card'
 import PrimaryButton from '../../components/ui/PrimaryButton'
 import type { Transaction } from '../../models/transaction'
-import type { GroupSession, GroupExpense } from '../../models/group'
 import { getCategories } from '../../services/categoryService'
 import { getTransactions } from '../../services/transactionService'
-import { createGroup, getGroupExpenses, getJoinedGroups } from '../../services/groupService'
-import { formatDate, formatTime } from '../../utils/format'
-import { getCategoryById } from '../../models/types'
+import { createGroup, getJoinedGroups } from '../../services/groupService'
 import { useThemeClass } from '../../utils/theme'
 
 export default function RecordPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [groupSessions, setGroupSessions] = useState<GroupSession[]>([])
-  const [groupExpenses, setGroupExpenses] = useState<GroupExpense[]>([])
   const [groupSheetOpen, setGroupSheetOpen] = useState(false)
   const [groupTitle, setGroupTitle] = useState('')
   const themeClass = useThemeClass()
-  const monthlyBudget = 3000
-  const [animatedTotals, setAnimatedTotals] = useState({ expense: 0, income: 0, balance: 0 })
-  const prevTotalsRef = useRef({ expense: 0, income: 0, balance: 0 })
+  // TODO: v1 暂时隐藏预算相关数据
+  // const monthlyBudget = 3000
+  // const [animatedTotals, setAnimatedTotals] = useState({ expense: 0, income: 0, balance: 0 })
+  // const prevTotalsRef = useRef({ expense: 0, income: 0, balance: 0 })
 
   useDidShow(() => {
     getCategories()
     setTransactions(getTransactions())
-    const groups = getJoinedGroups()
-    setGroupSessions(groups)
-    const allExpenses = groups.flatMap((session) => getGroupExpenses(session.id))
-    setGroupExpenses(allExpenses)
+    // TODO: v1 暂时隐藏多人记录聚合
+    getJoinedGroups()
   })
 
-  const recentTransactions = useMemo(() => transactions, [transactions])
-  const groupSessionMap = useMemo(
-    () => new Map(groupSessions.map((session) => [session.id, session])),
-    [groupSessions]
-  )
-  const totals = useMemo(() => {
-    return transactions.reduce(
-      (acc, item) => {
-        if (item.type === 'INCOME') {
-          acc.income += item.amount
-        } else {
-          acc.expense += item.amount
-        }
-        return acc
-      },
-      { income: 0, expense: 0 }
-    )
-  }, [transactions])
+  // TODO: v1 暂时隐藏最近记录
+  // const recentTransactions = useMemo(() => transactions, [transactions])
+  // TODO: v1 暂时隐藏多人记录聚合
+  // TODO: v1 暂时隐藏预算相关数据
+  // const totals = useMemo(() => {
+  //   return transactions.reduce(
+  //     (acc, item) => {
+  //       if (item.type === 'INCOME') {
+  //         acc.income += item.amount
+  //       } else {
+  //         acc.expense += item.amount
+  //       }
+  //       return acc
+  //     },
+  //     { income: 0, expense: 0 }
+  //   )
+  // }, [transactions])
 
-  useEffect(() => {
-    const from = prevTotalsRef.current
-    const to = {
-      expense: totals.expense,
-      income: totals.income,
-      balance: totals.income - totals.expense
-    }
-    const duration = 600
-    const start = Date.now()
-    let timer: ReturnType<typeof setTimeout> | null = null
+  // TODO: v1 暂时隐藏预算相关动画逻辑
+  // useEffect(() => {
+  //   const from = prevTotalsRef.current
+  //   const to = {
+  //     expense: totals.expense,
+  //     income: totals.income,
+  //     balance: totals.income - totals.expense
+  //   }
+  //   const duration = 600
+  //   const start = Date.now()
+  //   let timer: ReturnType<typeof setTimeout> | null = null
+  //
+  //   const tick = () => {
+  //     const progress = Math.min((Date.now() - start) / duration, 1)
+  //     setAnimatedTotals({
+  //       expense: from.expense + (to.expense - from.expense) * progress,
+  //       income: from.income + (to.income - from.income) * progress,
+  //       balance: from.balance + (to.balance - from.balance) * progress
+  //     })
+  //     if (progress < 1) {
+  //       timer = setTimeout(tick, 16)
+  //     } else {
+  //       prevTotalsRef.current = to
+  //     }
+  //   }
+  //
+  //   tick()
+  //   return () => {
+  //     if (timer) {
+  //       clearTimeout(timer)
+  //     }
+  //   }
+  // }, [totals])
 
-    const tick = () => {
-      const progress = Math.min((Date.now() - start) / duration, 1)
-      setAnimatedTotals({
-        expense: from.expense + (to.expense - from.expense) * progress,
-        income: from.income + (to.income - from.income) * progress,
-        balance: from.balance + (to.balance - from.balance) * progress
-      })
-      if (progress < 1) {
-        timer = setTimeout(tick, 16)
-      } else {
-        prevTotalsRef.current = to
-      }
-    }
+  // TODO: v1 暂时隐藏账单金额拆分
+  // const formatCurrencyParts = (value: number) => {
+  //   const [intPart, decPart] = value.toFixed(2).split('.')
+  //   return { intPart, decPart }
+  // }
+  //
+  // const getAmountDisplay = (amount: number, type: 'INCOME' | 'EXPENSE') => {
+  //   const sign = type === 'INCOME' ? '+' : '-'
+  //   const [intPart, decPart] = amount.toFixed(2).split('.')
+  //   const className = type === 'INCOME' ? 'record-amount record-amount--income' : 'record-amount record-amount--expense'
+  //   return { sign, intPart, decPart, className }
+  // }
 
-    tick()
-    return () => {
-      if (timer) {
-        clearTimeout(timer)
-      }
-    }
-  }, [totals])
+  // TODO: v1 暂时隐藏最近记录列表色彩
+  // const categoryToneMap: Record<number, string> = {
+  //   1: 'food',
+  //   2: 'shop',
+  //   3: 'traffic',
+  //   4: 'fun',
+  //   5: 'health',
+  //   6: 'study',
+  //   7: 'travel',
+  //   101: 'income',
+  //   102: 'income',
+  //   103: 'income',
+  //   104: 'income'
+  // }
+  //
+  // const getCategoryTone = (categoryId?: number) => categoryToneMap[categoryId ?? -1] ?? 'default'
+  // const categoryColorMap: Record<string, string> = {
+  //   food: 'record-cell__icon--food',
+  //   shop: 'record-cell__icon--shop',
+  //   traffic: 'record-cell__icon--traffic',
+  //   fun: 'record-cell__icon--fun',
+  //   health: 'record-cell__icon--health',
+  //   study: 'record-cell__icon--study',
+  //   travel: 'record-cell__icon--travel',
+  //   income: 'record-cell__icon--income',
+  //   group: 'record-cell__icon--group'
+  // }
 
-  const formatCurrencyParts = (value: number) => {
-    const [intPart, decPart] = value.toFixed(2).split('.')
-    return { intPart, decPart }
-  }
+  // TODO: v1 暂时隐藏最近记录数据处理
+  // const expenseParts = formatCurrencyParts(animatedTotals.expense)
+  // const incomeParts = formatCurrencyParts(animatedTotals.income)
+  // const balanceParts = formatCurrencyParts(animatedTotals.balance)
+  // const budgetParts = formatCurrencyParts(monthlyBudget)
+  // const dailyExpenseParts = formatCurrencyParts(animatedTotals.expense / 30)
+  // const progressPercent = monthlyBudget > 0 ? Math.min(Math.round((totals.expense / monthlyBudget) * 100), 100) : 0
+  // const dashboardItems = [
+  //   { key: 'balance', label: '本月结余', parts: balanceParts },
+  //   { key: 'budget', label: '总预算', parts: budgetParts },
+  //   { key: 'daily', label: '日均支出', parts: dailyExpenseParts }
+  // ]
+  // const recordItems = useMemo(() => {
+  //   const personalItems = recentTransactions.map((item) => {
+  //     const category = getCategoryById(item.categoryId)
+  //     const amountDisplay = getAmountDisplay(item.amount, item.type)
+  //     return {
+  //       id: `personal-${item.id}`,
+  //       source: 'personal' as const,
+  //       name: category?.desc ?? '未分类',
+  //       icon: category?.icon ?? '🧾',
+  //       amountDisplay,
+  //       tone: getCategoryTone(category?.id),
+  //       timeText: `${formatDate(item.dateISO)} ${formatTime(item.dateISO)}`,
+  //       dateISO: item.dateISO
+  //     }
+  //   })
+  //
+  //   const groupItems = groupExpenses.map((item) => {
+  //     const session = groupSessionMap.get(item.groupId)
+  //     const amountDisplay = getAmountDisplay(item.amount, 'EXPENSE')
+  //     return {
+  //       id: `group-${item.id}`,
+  //       source: 'group' as const,
+  //       name: session?.title ?? '多人记账',
+  //       icon: '👥',
+  //       amountDisplay: { ...amountDisplay, className: 'record-amount record-amount--group' },
+  //       tone: 'group',
+  //       timeText: `${formatDate(item.dateISO)} ${formatTime(item.dateISO)}`,
+  //       dateISO: item.dateISO
+  //     }
+  //   })
+  //
+  //   return [...personalItems, ...groupItems]
+  //     .sort((a, b) => (b.dateISO ?? '').localeCompare(a.dateISO ?? ''))
+  //     .slice(0, 5)
+  // }, [recentTransactions, groupExpenses, groupSessionMap])
 
-  const getAmountDisplay = (amount: number, type: 'INCOME' | 'EXPENSE') => {
-    const sign = type === 'INCOME' ? '+' : '-'
-    const [intPart, decPart] = amount.toFixed(2).split('.')
-    const className = type === 'INCOME' ? 'record-amount record-amount--income' : 'record-amount record-amount--expense'
-    return { sign, intPart, decPart, className }
-  }
-
-  const categoryToneMap: Record<number, string> = {
-    1: 'food',
-    2: 'shop',
-    3: 'traffic',
-    4: 'fun',
-    5: 'health',
-    6: 'study',
-    7: 'travel',
-    101: 'income',
-    102: 'income',
-    103: 'income',
-    104: 'income'
-  }
-
-  const getCategoryTone = (categoryId?: number) => categoryToneMap[categoryId ?? -1] ?? 'default'
-  const categoryColorMap: Record<string, string> = {
-    food: 'record-cell__icon--food',
-    shop: 'record-cell__icon--shop',
-    traffic: 'record-cell__icon--traffic',
-    fun: 'record-cell__icon--fun',
-    health: 'record-cell__icon--health',
-    study: 'record-cell__icon--study',
-    travel: 'record-cell__icon--travel',
-    income: 'record-cell__icon--income',
-    group: 'record-cell__icon--group'
-  }
-
-  const expenseParts = formatCurrencyParts(animatedTotals.expense)
-  const incomeParts = formatCurrencyParts(animatedTotals.income)
-  const balanceParts = formatCurrencyParts(animatedTotals.balance)
-  const budgetParts = formatCurrencyParts(monthlyBudget)
-  const dailyExpenseParts = formatCurrencyParts(animatedTotals.expense / 30)
-  const progressPercent = monthlyBudget > 0 ? Math.min(Math.round((totals.expense / monthlyBudget) * 100), 100) : 0
-  const dashboardItems = [
-    { key: 'balance', label: '本月结余', parts: balanceParts },
-    { key: 'budget', label: '总预算', parts: budgetParts },
-    { key: 'daily', label: '日均支出', parts: dailyExpenseParts }
-  ]
-  const recordItems = useMemo(() => {
-    const personalItems = recentTransactions.map((item) => {
-      const category = getCategoryById(item.categoryId)
-      const amountDisplay = getAmountDisplay(item.amount, item.type)
-      return {
-        id: `personal-${item.id}`,
-        source: 'personal' as const,
-        name: category?.desc ?? '未分类',
-        icon: category?.icon ?? '🧾',
-        amountDisplay,
-        tone: getCategoryTone(category?.id),
-        timeText: `${formatDate(item.dateISO)} ${formatTime(item.dateISO)}`,
-        dateISO: item.dateISO
-      }
-    })
-
-    const groupItems = groupExpenses.map((item) => {
-      const session = groupSessionMap.get(item.groupId)
-      const amountDisplay = getAmountDisplay(item.amount, 'EXPENSE')
-      return {
-        id: `group-${item.id}`,
-        source: 'group' as const,
-        name: session?.title ?? '多人记账',
-        icon: '👥',
-        amountDisplay: { ...amountDisplay, className: 'record-amount record-amount--group' },
-        tone: 'group',
-        timeText: `${formatDate(item.dateISO)} ${formatTime(item.dateISO)}`,
-        dateISO: item.dateISO
-      }
-    })
-
-    return [...personalItems, ...groupItems]
-      .sort((a, b) => (b.dateISO ?? '').localeCompare(a.dateISO ?? ''))
-      .slice(0, 5)
-  }, [recentTransactions, groupExpenses, groupSessionMap])
-
-  const handleQuickEntry = (type: 'EXPENSE' | 'INCOME') => {
-    Taro.navigateTo({
-      url: `/pages/record/quick/index?type=${type}`,
-      animationType: 'fade-in',
-      animationDuration: 180
-    })
-  }
+  // TODO: v1 暂时隐藏快捷记账入口
+  // const handleQuickEntry = (type: 'EXPENSE' | 'INCOME') => {
+  //   Taro.navigateTo({
+  //     url: `/pages/record/quick/index?type=${type}`,
+  //     animationType: 'fade-in',
+  //     animationDuration: 180
+  //   })
+  // }
 
 
   const handleOpenGroupSheet = () => {
@@ -202,9 +199,10 @@ export default function RecordPage() {
   }
 
 
-  const handleViewAll = () => {
-    Taro.switchTab({ url: '/pages/transactions/index' })
-  }
+  // TODO: v1 暂时隐藏最近记录入口
+  // const handleViewAll = () => {
+  //   Taro.switchTab({ url: '/pages/transactions/index' })
+  // }
 
   return (
     <View className={`page record-page ${themeClass}`}>
@@ -214,7 +212,8 @@ export default function RecordPage() {
           <Text className='page__helper'>几秒钟完成一笔记账。</Text>
         </View>
 
-        <Card className='summary-card'>
+        {/* TODO: v1 暂时隐藏数据看板与预算统计 */}
+        {/* <Card className='summary-card'>
           <View className='summary-card__top'>
             <View className='summary-metric'>
               <Text className='summary-metric__label'>本月支出</Text>
@@ -252,7 +251,7 @@ export default function RecordPage() {
               </Flex.Item>
             ))}
           </Flex>
-        </Card>
+        </Card> */}
 
         <Card className='group-card'>
           <View className='group-card__content'>
@@ -266,7 +265,8 @@ export default function RecordPage() {
           </View>
         </Card>
 
-        <Card className='quick-card'>
+        {/* TODO: v1 暂时隐藏快捷记账入口 */}
+        {/* <Card className='quick-card'>
           <View className='quick-stack quick-stack--full'>
             <View
               className='quick-mini quick-mini--expense'
@@ -289,17 +289,16 @@ export default function RecordPage() {
               <Text className='quick-mini__title'>收入</Text>
             </View>
           </View>
-        </Card>
+        </Card> */}
 
-        {false && (<View className='section-head' hidden>
+        {/* TODO: v1 暂时隐藏最近记录列表 */}
+        {/* <View className='section-head'>
           <Text className='section-head__title'>最近记录</Text>
           <Text className='section-head__action' hoverClass='press-opacity' onClick={handleViewAll}>
             查看全部
           </Text>
         </View>
-        )}
-        {false && (
-          <Card className='records-group' hidden>
+        <Card className='records-group'>
           {recentTransactions.length === 0 ? (
             <View className='records-empty'>
               <Empty description='暂无记录' />
@@ -330,8 +329,7 @@ export default function RecordPage() {
               )
             })
           )}
-        </Card>
-        )}
+        </Card> */}
       </View>
       <SafeArea position='bottom' />
       <Popup

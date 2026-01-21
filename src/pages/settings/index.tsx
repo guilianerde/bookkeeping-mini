@@ -86,7 +86,8 @@ export default function SettingsPage() {
           <Text className="page__subtitle">个性化与数据管理</Text>
         </View>
 
-        <Card title="功能开关">
+        {/* TODO: v1 暂时隐藏功能开关模块 */}
+        {/* <Card title="功能开关">
           <Cell.Group>
             <Cell className="setting-row" clickable align="center" activeOpacity={0.7}>
               <View className="setting-row__left">
@@ -103,9 +104,10 @@ export default function SettingsPage() {
               <Switch checked={settings.darkModeEnabled} onChange={handleDarkModeToggle} color="#4f7dff" />
             </Cell>
           </Cell.Group>
-        </Card>
+        </Card> */}
 
-        <Card title="数据管理" className="data-card">
+        {/* TODO: v1 暂时隐藏数据管理模块 */}
+        {/* <Card title="数据管理" className="data-card">
           <Cell.Group className="data-group">
             <Cell
               className="action-row"
@@ -147,7 +149,7 @@ export default function SettingsPage() {
               <Text className="action-row__hint">删除所有交易</Text>
             </View>
           </Cell>
-        </Card>
+        </Card> */}
 
         <Card title="关于">
           <Cell.Group>
