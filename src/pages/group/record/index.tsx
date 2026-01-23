@@ -8,13 +8,14 @@ import './index.scss'
 import Card from '../../../components/ui/Card'
 import PrimaryButton from '../../../components/ui/PrimaryButton'
 import type { GroupSession } from '../../../models/group'
-import { addLocalExpense, getJoinedGroupById, joinGroup } from '../../../services/groupService'
+import { addLocalExpense, ensureGroupSession, getJoinedGroupById } from '../../../services/groupService'
 import { sendGroupExpense } from '../../../services/groupWs'
 import { useThemeClass } from '../../../utils/theme'
 import { getAuthUserId } from '../../../services/authService'
 
 export default function GroupRecordPage() {
   const router = useRouter()
+  const groupId = Number(router.params?.id)
   const [session, setSession] = useState<GroupSession | null>(null)
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
@@ -24,11 +25,11 @@ export default function GroupRecordPage() {
 
   useDidShow(() => {
     const load = async () => {
-      const groupId = Number(router.params?.id)
       let current = getJoinedGroupById(groupId)
-      if (!current && groupId) {
+      if (groupId) {
         try {
-          current = await joinGroup(groupId)
+          // 仅在 wsPath 缺失或连接断开时重新 join
+          current = await ensureGroupSession(groupId)
         } catch (error) {
           Taro.showToast({ title: '请先登录', icon: 'none' })
           return
@@ -61,7 +62,17 @@ export default function GroupRecordPage() {
       Taro.showToast({ title: '请输入正确金额', icon: 'none' })
       return
     }
-    if (!session) {
+    let currentSession = session
+    if (!currentSession && groupId) {
+      try {
+        currentSession = await ensureGroupSession(groupId)
+        setSession(currentSession)
+      } catch (error) {
+        Taro.showToast({ title: '请先加入活动', icon: 'none' })
+        return
+      }
+    }
+    if (!currentSession) {
       Taro.showToast({ title: '活动不存在', icon: 'none' })
       return
     }
@@ -69,19 +80,23 @@ export default function GroupRecordPage() {
     const remark = description.trim()
 
     try {
-      await sendGroupExpense(session.id, {
-        type: 'expense',
-        amount: numericAmount,
-        title: description.trim() || '多人记账',
-        remark
-      })
+      await sendGroupExpense(
+        currentSession.id,
+        {
+          type: 'expense',
+          amount: numericAmount,
+          title: description.trim() || '多人记账',
+          remark
+        },
+        currentSession.wsPath
+      )
     } catch (error) {
       console.log(error)
       Taro.showToast({ title: '连接未建立，请稍后重试', icon: 'none' })
       return
     }
 
-    addLocalExpense(session.id, {
+    addLocalExpense(currentSession.id, {
       amount: numericAmount,
       title: description.trim() || '多人记账',
       remark,

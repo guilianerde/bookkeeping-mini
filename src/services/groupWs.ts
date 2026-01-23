@@ -3,9 +3,20 @@ import { API_BASE_URL } from '../config/api'
 import { getAuthToken } from './authService'
 
 type GroupMessageHandler = (payload: any) => void
-type SocketValue = Taro.SocketTask | Promise<Taro.SocketTask>
 
-const sockets = new Map<number, SocketValue>()
+type SocketState = {
+  task: Taro.SocketTask
+  ready: boolean
+  pending: string[]
+}
+
+export const getGroupSocketState = (groupId: number) => {
+  const state = sockets.get(groupId)
+  if (!state) return 'none'
+  return state.ready ? 'ready' : 'pending'
+}
+
+const sockets = new Map<number, SocketState>()
 const listeners = new Map<number, Set<GroupMessageHandler>>()
 
 const normalizeWsUrl = (wsPath: string) => {
@@ -28,69 +39,90 @@ const parseMessage = (data: any) => {
   return data
 }
 
-const isPromise = (value: SocketValue): value is Promise<Taro.SocketTask> => {
-  return typeof (value as Promise<Taro.SocketTask>)?.then === 'function'
-}
-
-const resolveSocket = async (groupId: number) => {
-  const socket = sockets.get(groupId)
-  if (!socket) return null
-  if (isPromise(socket)) {
-    return socket
-  }
-  return socket
-}
-
-export const connectGroupSocket = (groupId: number, wsPath: string) => {
-  if (sockets.has(groupId)) return
+export const connectGroupSocket = async (groupId: number, wsPath: string) => {
+  const existing = sockets.get(groupId)
+  if (existing) return existing.task
   const url = normalizeWsUrl(wsPath)
-  if (!url) return
+  if (!url) return undefined
 
   const token = getAuthToken()
-  const socketPromise = Taro.connectSocket({
+  const socketOrPromise = Taro.connectSocket({
     url,
     header: token ? { Authorization: `Bearer ${token}` } : undefined
   })
+  const socket = socketOrPromise instanceof Promise ? await socketOrPromise : socketOrPromise
+  const state: SocketState = { task: socket, ready: false, pending: [] }
+  sockets.set(groupId, state)
 
-  sockets.set(groupId, socketPromise)
+  socket.onOpen(() => {
+    state.ready = true
+    if (state.pending.length) {
+      state.pending.forEach((data) => socket.send({ data }))
+      state.pending = []
+    }
+  })
 
-  socketPromise
-    .then((socket) => {
-      sockets.set(groupId, socket)
+  socket.onMessage((event) => {
+    const payload = parseMessage(event.data)
+    const handlers = listeners.get(groupId)
+    if (!handlers) return
+    handlers.forEach((handler) => handler(payload))
+  })
 
-      socket.onMessage((event) => {
-        const payload = parseMessage(event.data)
-        const handlers = listeners.get(groupId)
-        if (!handlers) return
-        handlers.forEach((handler) => handler(payload))
-      })
+  socket.onClose(() => {
+    sockets.delete(groupId)
+  })
 
-      socket.onClose(() => {
-        sockets.delete(groupId)
-      })
+  socket.onError(() => {
+    sockets.delete(groupId)
+  })
 
-      socket.onError(() => {
-        sockets.delete(groupId)
-      })
-    })
-    .catch(() => {
-      sockets.delete(groupId)
-    })
+  return socket
 }
 
-export const disconnectGroupSocket = async (groupId: number) => {
-  const socket = await resolveSocket(groupId)
-  if (!socket) return
-  socket.close()
+export const ensureGroupSocket = async (groupId: number, wsPath?: string) => {
+  const existing = sockets.get(groupId)
+  if (existing?.ready) return existing.task
+  if (existing && !existing.ready) {
+    await new Promise((resolve) => setTimeout(resolve, 120))
+    return existing.task
+  }
+  if (!wsPath) return undefined
+  return connectGroupSocket(groupId, wsPath)
+}
+
+export const disconnectGroupSocket = (groupId: number) => {
+  const state = sockets.get(groupId)
+  if (!state) return
+  state.task.close()
   sockets.delete(groupId)
 }
 
-export const sendGroupExpense = async (groupId: number, payload: any) => {
-  const socket = await resolveSocket(groupId)
-  if (!socket) {
-    throw new Error('WS_NOT_CONNECTED')
+export const sendGroupExpense = async (groupId: number, payload: any, wsPath?: string) => {
+  const data = JSON.stringify(payload)
+  const existing = sockets.get(groupId)
+  if (existing?.ready) {
+    existing.task.send({ data })
+    return
   }
-  socket.send({ data: JSON.stringify(payload) })
+  if (existing && !existing.ready) {
+    existing.pending.push(data)
+    return
+  }
+  if (wsPath) {
+    const task = await ensureGroupSocket(groupId, wsPath)
+    if (!task) throw new Error('WS_NOT_CONNECTED')
+    const state = sockets.get(groupId)
+    if (state?.ready) {
+      task.send({ data })
+      return
+    }
+    if (state) {
+      state.pending.push(data)
+      return
+    }
+  }
+  throw new Error('WS_NOT_CONNECTED')
 }
 
 export const onGroupMessage = (groupId: number, handler: GroupMessageHandler) => {

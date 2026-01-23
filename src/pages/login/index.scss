@@ -29,6 +29,21 @@
   color: #8e8e93;
 }
 
+.login-nickname {
+  margin-top: 24rpx;
+  height: 96rpx;
+  padding: 0 20rpx;
+  border-radius: 20rpx;
+  background: #f7f8fa;
+  font-size: 28rpx;
+  color: #1c1c1e;
+  box-sizing: border-box;
+}
+
+.login-nickname__placeholder {
+  color: #b8b8b8;
+}
+
 .login-button {
   margin-top: 32rpx;
   width: 100%;

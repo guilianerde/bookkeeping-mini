@@ -1,4 +1,4 @@
-import { Button, View, Text } from '@tarojs/components'
+import { Button, View, Text, Input } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { useState } from 'react'
 import './index.scss'
@@ -30,13 +30,22 @@ const openTarget = (url: string) => {
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const [nickname, setNickname] = useState(() => {
+    const seed = Math.floor(100000 + Math.random() * 900000)
+    return `用户${seed}`
+  })
   const redirect = decodeURIComponent(router.params?.redirect ?? '')
 
-  const handleLogin = async () => {
+  const handleLogin = async (avatarOverride?: string) => {
     if (loading) return
     setLoading(true)
     try {
-      await loginWithWeChat()
+      const trimmedName = nickname.trim()
+      await loginWithWeChat({
+        nickName: trimmedName || undefined,
+        avatarUrl: avatarOverride || avatarUrl || undefined
+      })
       const target = redirect || '/pages/record/index'
       openTarget(target)
     } catch (error) {
@@ -46,14 +55,42 @@ export default function LoginPage() {
     }
   }
 
+  const handleChooseAvatar = async (event: any) => {
+    const url = event?.detail?.avatarUrl ?? ''
+    if (!url) {
+      Taro.showToast({ title: '请先选择头像', icon: 'none' })
+      return
+    }
+    setAvatarUrl(url)
+    await handleLogin(url)
+  }
+
   return (
     <View className='login-page'>
       <View className='login-card'>
         <Text className='login-title'>欢迎使用记账</Text>
-        <Text className='login-desc'>首次进入需要微信授权登录</Text>
-        <Button className='login-button' onClick={handleLogin} loading={loading}>
-          一键微信登录
-        </Button>
+        <Text className='login-desc'>已为你生成随机昵称，可修改</Text>
+        <Input
+          className='login-nickname'
+          value={nickname}
+          onInput={(event) => setNickname(event.detail.value)}
+          placeholder='请输入昵称（可选）'
+          placeholderClass='login-nickname__placeholder'
+        />
+        {avatarUrl ? (
+          <Button className='login-button' onClick={() => handleLogin()} loading={loading}>
+            一键微信登录
+          </Button>
+        ) : (
+          <Button
+            className='login-button'
+            openType='chooseAvatar'
+            onChooseAvatar={handleChooseAvatar}
+            loading={loading}
+          >
+            一键微信登录
+          </Button>
+        )}
       </View>
     </View>
   )

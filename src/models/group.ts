@@ -17,6 +17,14 @@ export type GroupExpense = {
   dateISO: string
 }
 
+export type GroupMember = {
+  groupId: number
+  userId: number
+  nickName?: string
+  avatarUrl?: string
+  joinedAt: string
+}
+
 export type GroupSettlement = {
   groupId: number
   balances: Array<{

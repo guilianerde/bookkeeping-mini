@@ -1,4 +1,4 @@
-import { Button, Canvas, Image, View, Text } from '@tarojs/components'
+import { Button, Canvas, Image, ScrollView, View, Text } from '@tarojs/components'
 import Taro, { useDidShow, useRouter, useShareAppMessage } from '@tarojs/taro'
 import { useEffect, useMemo, useState } from 'react'
 import { Cell, SafeArea } from '@taroify/core'
@@ -7,14 +7,16 @@ import '@taroify/core/safe-area/style'
 import './index.scss'
 import Card from '../../components/ui/Card'
 import PrimaryButton from '../../components/ui/PrimaryButton'
-import type { GroupExpense, GroupFinal, GroupSession, GroupSettlement } from '../../models/group'
+import type { GroupExpense, GroupFinal, GroupMember, GroupSession, GroupSettlement } from '../../models/group'
 import {
+  ensureGroupSession,
   fetchGroupFinal,
   fetchSettlement,
   getGroupExpenses,
+  getGroupMembers,
   getJoinedGroups,
-  joinGroup,
-  saveGroupExpense
+  saveGroupExpense,
+  upsertGroupMember
 } from '../../services/groupService'
 import { onGroupMessage } from '../../services/groupWs'
 import { formatDate, formatTime } from '../../utils/format'
@@ -25,9 +27,11 @@ export default function GroupPage() {
   const router = useRouter()
   const [session, setSession] = useState<GroupSession | null>(null)
   const [expenses, setExpenses] = useState<GroupExpense[]>([])
+  const [members, setMembers] = useState<GroupMember[]>([])
   const [settlement, setSettlement] = useState<GroupSettlement | null>(null)
   const [finalDetail, setFinalDetail] = useState<GroupFinal | null>(null)
   const [posterSize, setPosterSize] = useState({ width: 1, height: 1 })
+  const [visibleCount, setVisibleCount] = useState(5)
   const themeClass = useThemeClass()
 
   useDidShow(() => {
@@ -57,6 +61,7 @@ export default function GroupPage() {
               )
               finalExpenses.sort((a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime())
               setExpenses(finalExpenses)
+              setMembers(getGroupMembers(finalData.groupId))
               setSession({
                 id: finalData.groupId,
                 title: finalData.title,
@@ -69,10 +74,10 @@ export default function GroupPage() {
             // ignore final fetch errors, fallback to realtime room join
           }
 
-          current = await joinGroup(paramId)
+          current = await ensureGroupSession(paramId)
         } else {
           const first = getJoinedGroups()[0]
-          current = first ? await joinGroup(first.id) : undefined
+          current = first ? await ensureGroupSession(first.id) : undefined
         }
       } catch (error) {
         Taro.showToast({ title: '请先登录', icon: 'none' })
@@ -88,25 +93,32 @@ export default function GroupPage() {
 
       setFinalDetail(null)
       setSession(current)
-      if ( (getGroupExpenses(current.id)?? []).length  == 0 ){
-        const finalData = await fetchGroupFinal(paramId)
-        const finalExpenses = finalData.members.flatMap((member) =>
-          member.expenses.map((expense, index) => ({
-            id: `final_${paramId}_${member.userId}_${index}`,
-            groupId: paramId,
-            amount: Number(expense.amount ?? 0),
-            title: expense.title,
-            remark: expense.remark,
-            userId: member.userId,
-            userName: member.name,
-            userAvatar: member.avatar,
-            dateISO: expense.createTime || finalData.endTime || new Date().toISOString()
-          }))
-        )
-        finalExpenses.sort((a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime())
-        setExpenses(finalExpenses)
-      }else {
-        setExpenses(getGroupExpenses(current.id))
+      setMembers(getGroupMembers(current.id))
+      const cachedExpenses = getGroupExpenses(current.id)
+      setExpenses(cachedExpenses)
+      if (!cachedExpenses.length && paramId) {
+        try {
+          const finalData = await fetchGroupFinal(paramId)
+          const finalExpenses = finalData.members.flatMap((member) =>
+            member.expenses.map((expense, index) => ({
+              id: `final_${paramId}_${member.userId}_${index}`,
+              groupId: paramId,
+              amount: Number(expense.amount ?? 0),
+              title: expense.title,
+              remark: expense.remark,
+              userId: member.userId,
+              userName: member.name,
+              userAvatar: member.avatar,
+              dateISO: expense.createTime || finalData.endTime || new Date().toISOString()
+            }))
+          )
+          finalExpenses.sort((a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime())
+          finalExpenses.forEach((expense) => saveGroupExpense(expense))
+          setExpenses(getGroupExpenses(current.id))
+          setMembers(getGroupMembers(current.id))
+        } catch (error) {
+          // ignore final fetch errors, fallback to cached list
+        }
       }
       try {
         const data = await fetchSettlement(current.id)
@@ -123,6 +135,17 @@ export default function GroupPage() {
     if (!session || finalDetail) return
     const unsubscribe = onGroupMessage(session.id, (payload) => {
       if (!payload) return
+      if (payload.type === 'member_join' && payload.userId) {
+        upsertGroupMember({
+          groupId: session.id,
+          userId: payload.userId,
+          nickName: payload.nickName,
+          avatarUrl: payload.avatarUrl,
+          joinedAt: new Date().toISOString()
+        })
+        setMembers(getGroupMembers(session.id))
+        return
+      }
       if (payload.type === 'settlement' && payload.settlement) {
         setSettlement(payload.settlement)
         return
@@ -135,6 +158,8 @@ export default function GroupPage() {
           title: payload.title,
           remark: payload.remark,
           userId: payload.userId,
+          userName: payload.nickName,
+          userAvatar: payload.avatarUrl,
           dateISO: payload.dateISO ?? new Date().toISOString()
         }
         saveGroupExpense(expense)
@@ -144,6 +169,10 @@ export default function GroupPage() {
 
     return () => unsubscribe()
   }, [session])
+
+  useEffect(() => {
+    setVisibleCount(5)
+  }, [expenses])
 
   const currentUserId = getAuthUserId()
 
@@ -161,18 +190,31 @@ export default function GroupPage() {
 
   const netLabel = currentNet >= 0 ? '待收' : '待付'
 
+  const memberMap = useMemo(() => {
+    return new Map(members.map((member) => [member.userId, member]))
+  }, [members])
+
   const memberList = useMemo(() => {
     if (settlement?.balances?.length) {
-      return settlement.balances.map((item) => ({
-        id: item.userId,
-        name: item.userId === currentUserId ? '我' : `用户${item.userId}`
+      return settlement.balances.map((item) => {
+        const member = memberMap.get(item.userId)
+        return {
+          id: item.userId,
+          name: item.userId === currentUserId ? '我' : member?.nickName || `用户${item.userId}`
+        }
+      })
+    }
+    if (members.length) {
+      return members.map((member) => ({
+        id: member.userId,
+        name: member.userId === currentUserId ? '我' : member.nickName || `用户${member.userId}`
       }))
     }
     if (currentUserId !== undefined) {
       return [{ id: currentUserId, name: '我' }]
     }
     return []
-  }, [settlement, currentUserId])
+  }, [settlement, members, memberMap, currentUserId])
 
   const transfers = settlement?.transfers ?? []
 
@@ -297,6 +339,8 @@ export default function GroupPage() {
     })
   }
 
+  const visibleExpenses = expenses.slice(0, visibleCount)
+
   return (
     <View className={`page group-page ${themeClass}`}>
       <View className='page__content'>
@@ -366,37 +410,50 @@ export default function GroupPage() {
               <Text className='group-empty__text'>暂无记账，开始添加第一笔。</Text>
             </View>
           ) : (
-            <View className='group-transactions'>
-              {expenses.map((item) => (
-                <Cell key={item.id} className='group-transaction' clickable activeOpacity={0.7}>
-                  <View className='group-transaction__left'>
-                    <View className='group-transaction__icon'>
-                      {item.userAvatar ? (
-                        <Image className='group-transaction__avatar' src={item.userAvatar} mode='aspectFill' />
-                      ) : (
-                        <Text>{(item.userName || `用户${item.userId ?? ''}` || '👥').slice(0, 1)}</Text>
-                      )}
-                    </View>
-                    <View className='group-transaction__meta'>
-                      <Text className='group-transaction__name'>{item.title || item.remark || '多人记账'}</Text>
-                      <Text className='group-transaction__time'>
-                        {formatDate(item.dateISO)} {formatTime(item.dateISO)}
-                      </Text>
-                      {(item.userId || item.userName) ? (
-                        <Text className='group-transaction__payer'>
-                          付款人：{item.userName ?? `用户${item.userId}`}
+            <ScrollView
+              className='group-transactions-scroll'
+              scrollY
+              lowerThreshold={40}
+              onScrollToLower={() =>
+                setVisibleCount((prev) => Math.min(prev + 5, expenses.length))
+              }
+            >
+              <View className='group-transactions'>
+                {visibleExpenses.map((item) => {
+                  const cachedMember = item.userId ? memberMap.get(item.userId) : undefined
+                  const displayName = item.userName || cachedMember?.nickName || (item.userId ? `用户${item.userId}` : '👥')
+                  const displayAvatar = item.userAvatar || cachedMember?.avatarUrl
+
+                  return (
+                    <Cell key={item.id} className='group-transaction' clickable activeOpacity={0.7}>
+                    <View className='group-transaction__left'>
+                      <View className='group-transaction__icon'>
+                        {displayAvatar ? (
+                          <Image className='group-transaction__avatar' src={displayAvatar} mode='aspectFill' />
+                        ) : (
+                          <Text>{displayName.slice(0, 1)}</Text>
+                        )}
+                      </View>
+                      <View className='group-transaction__meta'>
+                        <Text className='group-transaction__name'>{item.title || item.remark || '多人记账'}</Text>
+                        <Text className='group-transaction__time'>
+                          {formatDate(item.dateISO)} {formatTime(item.dateISO)}
                         </Text>
-                      ) : null}
+                        {item.userId || item.userName ? (
+                          <Text className='group-transaction__payer'>付款人：{displayName}</Text>
+                        ) : null}
+                      </View>
                     </View>
-                  </View>
-                  <View className='group-transaction__amount'>
-                    <Text className='group-transaction__currency'>¥</Text>
-                    <Text className='group-transaction__int'>{item.amount.toFixed(0)}</Text>
-                    <Text className='group-transaction__dec'>.{item.amount.toFixed(2).split('.')[1]}</Text>
-                  </View>
-                </Cell>
-              ))}
-            </View>
+                    <View className='group-transaction__amount'>
+                      <Text className='group-transaction__currency'>¥</Text>
+                      <Text className='group-transaction__int'>{item.amount.toFixed(0)}</Text>
+                      <Text className='group-transaction__dec'>.{item.amount.toFixed(2).split('.')[1]}</Text>
+                    </View>
+                    </Cell>
+                  )
+                })}
+              </View>
+            </ScrollView>
           )}
         </Card>
 

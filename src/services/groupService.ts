@@ -1,7 +1,7 @@
 import { request } from './request'
 import { readStorage, storageKeys, writeStorage } from './storage'
-import type { GroupExpense, GroupFinal, GroupSession, GroupSettlement } from '../models/group'
-import { connectGroupSocket, disconnectGroupSocket } from './groupWs'
+import type { GroupExpense, GroupFinal, GroupMember, GroupSession, GroupSettlement } from '../models/group'
+import { connectGroupSocket, disconnectGroupSocket, getGroupSocketState } from './groupWs'
 
 type GroupApiResponse = {
   groupId: number
@@ -57,9 +57,10 @@ export const createGroup = async (title: string) => {
   return session
 }
 
-export const joinGroup = async (groupId: number) => {
+export const joinGroup = async (groupId: number, options?: { force?: boolean }) => {
+  const forceJoin = options?.force ?? false
   const existing = getJoinedGroupById(groupId)
-  if (existing) {
+  if (existing && !forceJoin) {
     connectGroupSocket(existing.id, existing.wsPath)
     return existing
   }
@@ -71,6 +72,15 @@ export const joinGroup = async (groupId: number) => {
   const session = saveJoinedGroup(toSession(data))
   connectGroupSocket(session.id, session.wsPath)
   return session
+}
+
+export const ensureGroupSession = async (groupId: number) => {
+  const existing = getJoinedGroupById(groupId)
+  if (existing?.wsPath) {
+    const state = getGroupSocketState(groupId)
+    if (state === 'ready' || state === 'pending') return existing
+  }
+  return joinGroup(groupId, { force: true })
 }
 
 export const leaveGroup = async (groupId: number) => {
@@ -103,13 +113,6 @@ export const fetchMyGroups = async () => {
   })
 }
 
-export const fetchGroupFinal = async (groupId: number) => {
-  return request<Record<string, never>, GroupFinal>({
-    url: `/groups/final/${groupId}`,
-    method: 'GET'
-  })
-}
-
 export const getGroupExpenses = (groupId: number): GroupExpense[] => {
   const all = readStorage<GroupExpense[]>(storageKeys.groupTransactions, [])
   return all.filter((item) => item.groupId === groupId)
@@ -133,4 +136,36 @@ export const addLocalExpense = (groupId: number, payload: { amount: number; titl
   }
   saveGroupExpense(expense)
   return expense
+}
+
+export const getGroupMembers = (groupId: number): GroupMember[] => {
+  const all = readStorage<GroupMember[]>(storageKeys.groupMembers, [])
+  return all.filter((item) => item.groupId === groupId)
+}
+
+export const upsertGroupMember = (member: GroupMember) => {
+  const all = readStorage<GroupMember[]>(storageKeys.groupMembers, [])
+  const next = [member, ...all.filter((item) => !(item.groupId === member.groupId && item.userId === member.userId))]
+  writeStorage(storageKeys.groupMembers, next)
+  return member
+}
+
+export const fetchGroupFinal = async (groupId: number) => {
+  const data = await request<Record<string, never>, GroupFinal>({
+    url: `/groups/final/${groupId}`,
+    method: 'GET'
+  })
+  if (data?.members?.length) {
+    data.members.forEach((member) => {
+      if (!member.userId) return
+      upsertGroupMember({
+        groupId: data.groupId,
+        userId: member.userId,
+        nickName: member.name,
+        avatarUrl: member.avatar,
+        joinedAt: member.joinTime || data.endTime || new Date().toISOString()
+      })
+    })
+  }
+  return data
 }

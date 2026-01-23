@@ -6,6 +6,11 @@ const AUTH_TOKEN_KEY = 'auth_token'
 const AUTH_PROFILE_KEY = 'auth_profile'
 const AUTH_USER_ID_KEY = 'auth_user_id'
 
+export type AuthProfile = {
+  nickName?: string
+  avatarUrl?: string
+}
+
 export const getAuthToken = () => {
   try {
     return Taro.getStorageSync(AUTH_TOKEN_KEY) as string | undefined
@@ -20,7 +25,7 @@ export const setAuthToken = (token: string) => {
   Taro.setStorageSync(AUTH_TOKEN_KEY, token)
 }
 
-export const setAuthProfile = (profile: Taro.UserInfo | undefined) => {
+export const setAuthProfile = (profile: AuthProfile | undefined) => {
   if (!profile) return
   Taro.setStorageSync(AUTH_PROFILE_KEY, profile)
 }
@@ -81,15 +86,7 @@ export type LoginResponse = {
   nickname?: string
 }
 
-export const loginWithWeChat = async () => {
-  if (!Taro.canIUse('getUserProfile')) {
-    throw new Error('当前环境不支持用户授权')
-  }
-
-  // 注意：getUserProfile 必须在用户手势内调用，放在 login 之前以避免失去手势上下文
-  const profile = await Taro.getUserProfile({ desc: '用于参与多人记账' })
-  console.log('profile', profile)
-
+export const loginWithWeChat = async (profile?: AuthProfile) => {
   const loginRes = await Taro.login()
   console.log('loginWithWeChat', loginRes)
   if (!loginRes.code) {
@@ -100,15 +97,17 @@ export const loginWithWeChat = async () => {
     method: 'POST',
     data: {
       code: loginRes.code,
-      userInfo: profile.userInfo
+      // TODO(backend): 接收并保存用户自定义的昵称/头像（不要依赖 getUserProfile）
+      nickname: profile?.nickName,
+      avatarUrl: profile?.avatarUrl
     }
   })
   console.log('loginWithWeChat-res', res)
-  if (!res.data || res.data.code != 200) {
+  if (!res.data || (res.data.code !== 0 && res.data.code !== 200)) {
     throw new Error(res.data?.message || '登录失败')
   }
   setAuthToken(res.data.data.token)
-  setAuthProfile(profile.userInfo)
+  setAuthProfile(profile)
   setAuthUserId(res.data.data.userId)
   return res.data.data
 }
