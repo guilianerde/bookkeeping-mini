@@ -208,11 +208,11 @@
 }
 
 .group-transactions-scroll {
-  max-height: 520rpx;
+  max-height: 460rpx;
 }
 
 .group-transaction.taroify-cell {
-  padding: 12rpx 14rpx;
+  padding: 8rpx 12rpx;
   border-radius: 16rpx;
   background: #ffffff;
   border: 1rpx solid rgba(0, 0, 0, 0.04);
@@ -223,9 +223,13 @@
 }
 
 .group-transaction {
+  display: block;
+}
+
+.group-transaction__row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 }
 
 .group-transaction__left {
@@ -233,17 +237,18 @@
   align-items: center;
   gap: 12rpx;
   flex: 1;
+  min-width: 0;
 }
 
 .group-transaction__icon {
-  width: 64rpx;
-  height: 64rpx;
+  width: 52rpx;
+  height: 52rpx;
   border-radius: 16rpx;
   background: #f2f4f7;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28rpx;
+  font-size: 24rpx;
   flex-shrink: 0;
 }
 
@@ -256,25 +261,31 @@
 .group-transaction__meta {
   display: flex;
   flex-direction: column;
-  gap: 4rpx;
+  gap: 2rpx;
+  min-width: 0;
 }
 
 .group-transaction__name {
-  font-size: 26rpx;
+  font-size: 23rpx;
   font-weight: 500;
   color: #323233;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.group-transaction__time,
-.group-transaction__payer {
-  font-size: 22rpx;
+.group-transaction__sub {
+  font-size: 20rpx;
   color: #969799;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .group-transaction__amount {
-  min-width: 150rpx;
+  flex: 0 0 180rpx;
   text-align: right;
-  @include amount-text(28rpx, 20rpx, #969799, 2rpx);
+  @include amount-text(26rpx, 18rpx, #969799, 2rpx);
 }
 
 .group-transaction__amount .group-transaction__int,

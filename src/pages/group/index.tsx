@@ -59,7 +59,10 @@ export default function GroupPage() {
                   dateISO: expense.createTime || finalData.endTime || new Date().toISOString()
                 }))
               )
-              finalExpenses.sort((a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime())
+              finalExpenses.sort(
+                (a, b) => {
+                 return  new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()
+                }).reverse()
               setExpenses(finalExpenses)
               setMembers(getGroupMembers(finalData.groupId))
               setSession({
@@ -112,7 +115,8 @@ export default function GroupPage() {
               dateISO: expense.createTime || finalData.endTime || new Date().toISOString()
             }))
           )
-          finalExpenses.sort((a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime())
+          finalExpenses.sort((a, b) =>
+            new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()).reverse()
           finalExpenses.forEach((expense) => saveGroupExpense(expense))
           setExpenses(getGroupExpenses(current.id))
           setMembers(getGroupMembers(current.id))
@@ -403,8 +407,8 @@ export default function GroupPage() {
             </View>
           </View>
         </Card>
-
-        <Card title='多人流水' subtitle='不影响个人预算' className='group-list'>
+        {/*subtitle='不影响个人预算'*/}
+        <Card title='多人流水'  className='group-list'>
           {expenses.length === 0 ? (
             <View className='group-empty'>
               <Text className='group-empty__text'>暂无记账，开始添加第一笔。</Text>
@@ -413,6 +417,11 @@ export default function GroupPage() {
             <ScrollView
               className='group-transactions-scroll'
               scrollY
+              enhanced
+              scrollWithAnimation
+              scrollAnchoring
+              // 避免滚动穿透导致页面整体跟随滚动
+              catchMove
               lowerThreshold={40}
               onScrollToLower={() =>
                 setVisibleCount((prev) => Math.min(prev + 5, expenses.length))
@@ -426,29 +435,29 @@ export default function GroupPage() {
 
                   return (
                     <Cell key={item.id} className='group-transaction' clickable activeOpacity={0.7}>
-                    <View className='group-transaction__left'>
-                      <View className='group-transaction__icon'>
-                        {displayAvatar ? (
-                          <Image className='group-transaction__avatar' src={displayAvatar} mode='aspectFill' />
-                        ) : (
-                          <Text>{displayName.slice(0, 1)}</Text>
-                        )}
+                      <View className='group-transaction__row'>
+                        <View className='group-transaction__left'>
+                          <View className='group-transaction__icon'>
+                            {displayAvatar ? (
+                              <Image className='group-transaction__avatar' src={displayAvatar} mode='aspectFill' />
+                            ) : (
+                              <Text>{displayName.slice(0, 1)}</Text>
+                            )}
+                          </View>
+                          <View className='group-transaction__meta'>
+                            <Text className='group-transaction__name'>{item.title || item.remark || '多人记账'}</Text>
+                            <Text className='group-transaction__sub'>
+                              {formatDate(item.dateISO)} {formatTime(item.dateISO)}
+                              {item.userId || item.userName ? ` · 付款人：${displayName}` : ''}
+                            </Text>
+                          </View>
+                        </View>
+                        <View className='group-transaction__amount'>
+                          <Text className='group-transaction__currency'>¥</Text>
+                          <Text className='group-transaction__int'>{item.amount.toFixed(0)}</Text>
+                          <Text className='group-transaction__dec'>.{item.amount.toFixed(2).split('.')[1]}</Text>
+                        </View>
                       </View>
-                      <View className='group-transaction__meta'>
-                        <Text className='group-transaction__name'>{item.title || item.remark || '多人记账'}</Text>
-                        <Text className='group-transaction__time'>
-                          {formatDate(item.dateISO)} {formatTime(item.dateISO)}
-                        </Text>
-                        {item.userId || item.userName ? (
-                          <Text className='group-transaction__payer'>付款人：{displayName}</Text>
-                        ) : null}
-                      </View>
-                    </View>
-                    <View className='group-transaction__amount'>
-                      <Text className='group-transaction__currency'>¥</Text>
-                      <Text className='group-transaction__int'>{item.amount.toFixed(0)}</Text>
-                      <Text className='group-transaction__dec'>.{item.amount.toFixed(2).split('.')[1]}</Text>
-                    </View>
                     </Cell>
                   )
                 })}
