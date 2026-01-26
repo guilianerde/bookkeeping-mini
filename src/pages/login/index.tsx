@@ -49,6 +49,7 @@ export default function LoginPage() {
       const target = redirect || '/pages/record/index'
       openTarget(target)
     } catch (error) {
+      console.error("login----error----：",error)
       Taro.showToast({ title: '登录失败，请重试', icon: 'none' })
     } finally {
       setLoading(false)

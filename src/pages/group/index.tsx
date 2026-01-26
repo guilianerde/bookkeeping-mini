@@ -198,27 +198,45 @@ export default function GroupPage() {
     return new Map(members.map((member) => [member.userId, member]))
   }, [members])
 
+  const finalMemberMap = useMemo(() => {
+    return new Map(finalDetail?.members?.map((member) => [member.userId, member]) ?? [])
+  }, [finalDetail])
+
   const memberList = useMemo(() => {
+    if (finalDetail?.members?.length) {
+      return finalDetail.members.map((member) => ({
+        id: member.userId,
+        name: member.userId === currentUserId ? '我' : member.name || `用户${member.userId}`,
+        avatar: member.avatar
+      }))
+    }
     if (settlement?.balances?.length) {
       return settlement.balances.map((item) => {
         const member = memberMap.get(item.userId)
+        const finalMember = finalMemberMap.get(item.userId)
         return {
           id: item.userId,
-          name: item.userId === currentUserId ? '我' : member?.nickName || `用户${item.userId}`
+          name: item.userId === currentUserId ? '我' : finalMember?.name || member?.nickName || `用户${item.userId}`,
+          avatar: finalMember?.avatar || member?.avatarUrl
         }
       })
     }
     if (members.length) {
       return members.map((member) => ({
         id: member.userId,
-        name: member.userId === currentUserId ? '我' : member.nickName || `用户${member.userId}`
+        name: member.userId === currentUserId ? '我' : member.nickName || `用户${member.userId}`,
+        avatar: member.avatarUrl
       }))
     }
     if (currentUserId !== undefined) {
       return [{ id: currentUserId, name: '我' }]
     }
     return []
-  }, [settlement, members, memberMap, currentUserId])
+  }, [finalDetail, settlement, members, memberMap, finalMemberMap, currentUserId])
+
+  const memberListMap = useMemo(() => {
+    return new Map(memberList.map((member) => [member.id, member]))
+  }, [memberList])
 
   const transfers = settlement?.transfers ?? []
 
@@ -379,7 +397,11 @@ export default function GroupPage() {
             <View className='member-strip__avatars'>
               {memberList.map((member) => (
                 <View className={`member-avatar ${member.name === '我' ? 'member-avatar--self' : ''}`} key={member.id}>
-                  <Text>{member.name.slice(0, 1)}</Text>
+                  {member.avatar ? (
+                    <Image className='member-avatar__image' src={member.avatar} mode='aspectFill' />
+                  ) : (
+                    <Text>{member.name.slice(0, 1)}</Text>
+                  )}
                 </View>
               ))}
             </View>
@@ -469,17 +491,39 @@ export default function GroupPage() {
         {transfers.length ? (
           <Card title='结算路径' subtitle='建议最少转账次数' className='settlement-card'>
             <View className='settlement-list'>
-              {transfers.map((item, index) => (
-                <View className='settlement-item' key={`${item.fromUserId}-${item.toUserId}-${index}`}>
-                  <Text className='settlement-item__from'>用户{item.fromUserId}</Text>
-                  <Text className='settlement-item__arrow'>→</Text>
-                  <Text className='settlement-item__to'>用户{item.toUserId}</Text>
-                  <View className='settlement-item__amount'>
-                    <Text className='settlement-item__currency'>¥</Text>
-                    <Text className='settlement-item__int'>{item.amount.toFixed(2)}</Text>
+              {transfers.map((item, index) => {
+                const fromMember = memberListMap.get(item.fromUserId)
+                const toMember = memberListMap.get(item.toUserId)
+                return (
+                  <View className='settlement-item' key={`${item.fromUserId}-${item.toUserId}-${index}`}>
+                    <View className='settlement-item__person'>
+                      <View className='settlement-avatar'>
+                        {fromMember?.avatar ? (
+                          <Image className='settlement-avatar__image' src={fromMember.avatar} mode='aspectFill' />
+                        ) : (
+                          <Text>{(fromMember?.name ?? `用户${item.fromUserId}`).slice(0, 1)}</Text>
+                        )}
+                      </View>
+                      <Text className='settlement-item__name'>{fromMember?.name ?? `用户${item.fromUserId}`}</Text>
+                    </View>
+                    <Text className='settlement-item__arrow'>→</Text>
+                    <View className='settlement-item__person'>
+                      <View className='settlement-avatar'>
+                        {toMember?.avatar ? (
+                          <Image className='settlement-avatar__image' src={toMember.avatar} mode='aspectFill' />
+                        ) : (
+                          <Text>{(toMember?.name ?? `用户${item.toUserId}`).slice(0, 1)}</Text>
+                        )}
+                      </View>
+                      <Text className='settlement-item__name'>{toMember?.name ?? `用户${item.toUserId}`}</Text>
+                    </View>
+                    <View className='settlement-item__amount'>
+                      <Text className='settlement-item__currency'>¥</Text>
+                      <Text className='settlement-item__int'>{item.amount.toFixed(2)}</Text>
+                    </View>
                   </View>
-                </View>
-              ))}
+                )
+              })}
             </View>
             <View className='settlement-footer'>
               <Text className='settlement-footer__hint'>复制收款信息后可直接在群聊粘贴</Text>
