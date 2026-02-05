@@ -23,6 +23,10 @@ export type GroupMember = {
   nickName?: string
   avatarUrl?: string
   joinedAt: string
+  role?: 'owner' | 'member'
+  status?: 0 | 1  // 0=在房，1=离开/被踢
+  leaveTime?: string
+  leaveReason?: 'leave' | 'kick'
 }
 
 export type GroupSettlement = {
@@ -63,4 +67,28 @@ export type GroupFinal = {
   endTime?: string
   members: GroupFinalMember[]
   settlement: GroupSettlement
+}
+
+// WebSocket 成员变更消息
+export type MemberChangeMessage = {
+  type: 'member_kick' | 'member_leave'
+  groupId: string
+  userId: string
+  operatorId?: string
+  timestamp: number
+}
+
+// WebSocket 结算更新消息
+export type SettlementMessage = {
+  type: 'settlement'
+  groupId: string
+  settlement: {
+    transfers: Array<{
+      from: string
+      to: string
+      amount: number
+    }>
+    netAmounts: Record<string, number>
+  }
+  timestamp: number
 }

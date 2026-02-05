@@ -1,6 +1,7 @@
 import Taro from '@tarojs/taro'
 import { API_BASE_URL } from '../config/api'
 import { getAuthToken } from './authService'
+import type { MemberChangeMessage } from '../models/group'
 
 type GroupMessageHandler = (payload: any) => void
 
@@ -134,5 +135,35 @@ export const onGroupMessage = (groupId: number, handler: GroupMessageHandler) =>
     if (!next) return
     next.delete(handler)
     if (next.size === 0) listeners.delete(groupId)
+  }
+}
+
+// 处理成员变更消息的辅助函数
+const processedMessages = new Set<string>()
+
+export const handleMemberChangeMessage = (message: MemberChangeMessage, currentUserId: number) => {
+  const { type, groupId, userId, timestamp } = message
+
+  // 消息去重
+  const messageId = `${type}_${groupId}_${userId}_${timestamp}`
+  if (processedMessages.has(messageId)) {
+    return { shouldHandle: false, isCurrentUser: false }
+  }
+  processedMessages.add(messageId)
+
+  // 清理旧消息（保留最近 100 条）
+  if (processedMessages.size > 100) {
+    const arr = Array.from(processedMessages)
+    arr.slice(0, 50).forEach(id => processedMessages.delete(id))
+  }
+
+  const isCurrentUser = String(userId) === String(currentUserId)
+
+  return {
+    shouldHandle: true,
+    isCurrentUser,
+    messageType: type,
+    groupId,
+    userId
   }
 }

@@ -1,0 +1,10 @@
+- 新增接口：
+  - `POST /groups/leave/{groupId}`：成员主动离开。
+  - `POST /groups/kick/{groupId}/{userId}`：房主踢出成员。
+- 返回值：成功返回通用 `Result`，失败返回业务异常信息。
+- WebSocket 广播：
+  - 消息类型：`member_leave`
+  - 字段：`groupId`、`userId`、`reason`（可选，如 `left`/`kicked`）
+- 前端需监听 WS 消息 `type=member_leave` 以更新成员列表。
+  - 同时保持对 `member_join/settlement/error` 的监听。
+  - `member_join` 字段：`groupId`、`userId`、`nickName`、`avatarUrl`

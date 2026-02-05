@@ -1,0 +1,20 @@
+.kick-confirm-dialog {
+  .taroify-dialog__header {
+    font-size: 36rpx;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .taroify-dialog__content {
+    font-size: 32rpx;
+    color: #666;
+    line-height: 1.6;
+    padding: 32rpx 48rpx;
+  }
+
+  .taroify-dialog__footer {
+    .taroify-button {
+      font-size: 32rpx;
+    }
+  }
+}

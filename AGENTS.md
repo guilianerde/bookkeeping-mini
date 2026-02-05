@@ -1,5 +1,11 @@
 # Repository Guidelines
 
+## Tech Stack
+- Taro + React + TypeScript, targets WeChat Mini Program (primary), H5, Alipay.
+- UI kit: Taroify (`@taroify/core`, `@taroify/icons`).
+- Styling: SCSS, 2-space indentation, single quotes, no semicolons.
+- Networking: REST via `src/services/request.ts` + WebSocket for group rooms (`src/services/groupWs.ts`).
+
 ## Project Structure & Module Organization
 - `src/` contains the Taro React app (pages, components, services, utils, models).
   - Pages live under `src/pages/*` with matching `.tsx`, `.scss`, and `.config.ts` files.
@@ -42,6 +48,7 @@
 - All HTTP requests go through `src/services/request.ts` and expect `Result<T>`; success codes include `0` and `200`.
 - Login flow is centralized in `src/services/authService.ts` and `src/pages/login/`.
   - Use `ensureLoginOrRedirect()` before protected pages (see `src/app.ts`, `src/pages/group/index.tsx`).
+  - Login uses `wx.login` + user-selected avatar (`chooseAvatar`) + optional nickname (no `getUserProfile`).
 - WeChat requires legal domains for requests. In dev tools you can disable domain checks; production must whitelist domains in the WeChat console.
 
 ## UI System & Styling
@@ -53,6 +60,14 @@
 - Local storage keys live in `src/services/storage.ts` (if used by a feature).
 - Group (多人记账) data and WebSocket helpers live in `src/services/groupService.ts` and `src/services/groupWs.ts`.
 - `/groups/mine` is used for the group list; `/groups/final/{groupId}` is used for final (settled) detail rendering.
+- Group member cache (`group_members`) stores avatar/nickname for rendering流水列表.
+- Group transactions are cached in `group_transactions` for local list rendering.
+
+## Current Features (Active)
+- 登录：一键登录（wx.login）+ 头像选择 + 昵称（随机默认值，可改）。
+- 多人记账：创建/加入房间、WebSocket 实时记账、结算数据展示与“生成长图”。
+- 多人流水：滚动列表显示、支持增量加载、缓存驱动展示。
+- 个人记账主流程：入口保留，但部分模块按 TODO 暂时隐藏。
 
 ## Feature Flags / Staging Behavior
 - Some features are intentionally hidden (e.g. 分摊人、同步到个人账本 in group record). Keep them off unless explicitly requested.

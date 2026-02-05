@@ -1,0 +1,43 @@
+.member-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0
+
+  &__avatar {
+    width: 88rpx;
+    height: 88rpx;
+    border-radius: 50%;
+    margin-right: 24rpx;
+    flex-shrink: 0
+  }
+
+  &__info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 16rpx
+  }
+
+  &__nickname {
+    font-size: 32rpx;
+    color: #333;
+    font-weight: 500
+  }
+
+  &__badge {
+    display: inline-block;
+    padding: 4rpx 12rpx;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    font-size: 22rpx;
+    border-radius: 8rpx;
+    line-height: 1.2
+  }
+
+  &__kick-btn {
+    flex-shrink: 0;
+    min-width: 120rpx
+  }
+}

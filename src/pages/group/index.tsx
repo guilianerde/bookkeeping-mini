@@ -7,6 +7,9 @@ import '@taroify/core/safe-area/style'
 import './index.scss'
 import Card from '../../components/ui/Card'
 import PrimaryButton from '../../components/ui/PrimaryButton'
+import MemberItem from '../../components/ui/MemberItem'
+import KickConfirmDialog from '../../components/ui/KickConfirmDialog'
+import LeaveConfirmDialog from '../../components/ui/LeaveConfirmDialog'
 import type { GroupExpense, GroupFinal, GroupMember, GroupSession, GroupSettlement } from '../../models/group'
 import {
   ensureGroupSession,
@@ -16,9 +19,12 @@ import {
   getGroupMembers,
   getJoinedGroups,
   saveGroupExpense,
-  upsertGroupMember
+  upsertGroupMember,
+  kickGroupMember,
+  leaveGroup
 } from '../../services/groupService'
-import { onGroupMessage } from '../../services/groupWs'
+import { onGroupMessage, handleMemberChangeMessage } from '../../services/groupWs'
+import { clearGroupCache, removeMemberFromCache } from '../../services/storage'
 import { formatDate, formatTime } from '../../utils/format'
 import { useThemeClass } from '../../utils/theme'
 import { ensureLoginOrRedirect, getAuthUserId } from '../../services/authService'
@@ -32,6 +38,12 @@ export default function GroupPage() {
   const [finalDetail, setFinalDetail] = useState<GroupFinal | null>(null)
   const [posterSize, setPosterSize] = useState({ width: 1, height: 1 })
   const [visibleCount, setVisibleCount] = useState(5)
+  const [kickDialogVisible, setKickDialogVisible] = useState(false)
+  const [leaveDialogVisible, setLeaveDialogVisible] = useState(false)
+  const [selectedMember, setSelectedMember] = useState<GroupMember | null>(null)
+  const [kickLoading, setKickLoading] = useState(false)
+  const [leaveLoading, setLeaveLoading] = useState(false)
+  const [showMemberList, setShowMemberList] = useState(false)
   const themeClass = useThemeClass()
 
   useDidShow(() => {
@@ -150,6 +162,33 @@ export default function GroupPage() {
         setMembers(getGroupMembers(session.id))
         return
       }
+      if (payload.type === 'member_kick' || payload.type === 'member_leave') {
+        const result = handleMemberChangeMessage(payload, currentUserId ?? 0)
+        if (!result.shouldHandle) return
+
+        if (result.isCurrentUser) {
+          // 当前用户被踢出或离开
+          Taro.showToast({
+            title: payload.type === 'member_kick' ? '您已被移出房间' : '已退出房间',
+            icon: 'none'
+          })
+          clearGroupCache(session.id)
+          setTimeout(() => {
+            Taro.redirectTo({ url: '/pages/groupList/index' })
+          }, 1500)
+        } else {
+          // 其他成员被踢出或离开
+          const member = members.find(m => m.userId === payload.userId)
+          const nickname = member?.nickName || '成员'
+          Taro.showToast({
+            title: `${nickname} ${payload.type === 'member_kick' ? '已被移出房间' : '已离开房间'}`,
+            icon: 'none'
+          })
+          removeMemberFromCache(session.id, payload.userId)
+          setMembers(getGroupMembers(session.id))
+        }
+        return
+      }
       if (payload.type === 'settlement' && payload.settlement) {
         setSettlement(payload.settlement)
         return
@@ -172,13 +211,13 @@ export default function GroupPage() {
     })
 
     return () => unsubscribe()
-  }, [session])
+  }, [session, currentUserId, members])
+
+  const currentUserId = getAuthUserId()
 
   useEffect(() => {
     setVisibleCount(5)
   }, [expenses])
-
-  const currentUserId = getAuthUserId()
 
   const totalExpense = useMemo(() => {
     if (settlement) {
@@ -300,6 +339,56 @@ export default function GroupPage() {
     }
   }
 
+  const handleKickMember = (member: GroupMember) => {
+    setSelectedMember(member)
+    setKickDialogVisible(true)
+  }
+
+  const handleConfirmKick = async () => {
+    if (!selectedMember || !session) return
+    setKickLoading(true)
+    try {
+      await kickGroupMember(session.id, selectedMember.userId)
+      Taro.showToast({
+        title: `已将 ${selectedMember.nickName || '该成员'} 移出房间`,
+        icon: 'success'
+      })
+      setKickDialogVisible(false)
+      setSelectedMember(null)
+    } catch (error: any) {
+      const message = error?.message || '操作失败'
+      Taro.showToast({ title: message, icon: 'none' })
+    } finally {
+      setKickLoading(false)
+    }
+  }
+
+  const handleLeaveRoom = () => {
+    const currentMember = members.find(m => m.userId === currentUserId)
+    if (currentMember?.role === 'owner') {
+      Taro.showToast({ title: '请先转让房主后再退出', icon: 'none' })
+      return
+    }
+    setLeaveDialogVisible(true)
+  }
+
+  const handleConfirmLeave = async () => {
+    if (!session) return
+    setLeaveLoading(true)
+    try {
+      await leaveGroup(session.id)
+      Taro.showToast({ title: '已退出房间', icon: 'success' })
+      clearGroupCache(session.id)
+      setTimeout(() => {
+        Taro.redirectTo({ url: '/pages/groupList/index' })
+      }, 1500)
+    } catch (error: any) {
+      const message = error?.message || '操作失败'
+      Taro.showToast({ title: message, icon: 'none' })
+      setLeaveLoading(false)
+    }
+  }
+
   const handleGeneratePoster = async () => {
     if (!transfers.length) {
       Taro.showToast({ title: '暂无结算信息', icon: 'none' })
@@ -405,8 +494,70 @@ export default function GroupPage() {
                 </View>
               ))}
             </View>
+            <View
+              className='member-strip__toggle'
+              hoverClass='press-opacity'
+              onClick={() => setShowMemberList(!showMemberList)}
+            >
+              <Text>{showMemberList ? '收起' : '管理'}</Text>
+            </View>
           </View>
         </Card>
+
+        {showMemberList && !finalDetail && (
+          <Card title='成员管理' className='member-management'>
+            {members.length === 0 ? (
+              <View className='member-empty'>
+                <Text className='member-empty__text'>暂无成员</Text>
+              </View>
+            ) : (
+              <View className='member-list'>
+                {members.map((member) => {
+                  const isOwner = members.find(m => m.userId === currentUserId)?.role === 'owner'
+                  const isSelf = member.userId === currentUserId
+                  return (
+                    <MemberItem
+                      key={member.userId}
+                      member={member}
+                      isOwner={isOwner}
+                      isSelf={isSelf}
+                      onKick={handleKickMember}
+                      loading={kickLoading && selectedMember?.userId === member.userId}
+                    />
+                  )
+                })}
+              </View>
+            )}
+            {currentUserId && members.find(m => m.userId === currentUserId)?.role !== 'owner' && (
+              <View className='member-actions'>
+                <Button
+                  className='leave-room-btn'
+                  onClick={handleLeaveRoom}
+                >
+                  退出房间
+                </Button>
+              </View>
+            )}
+          </Card>
+        )}
+
+        <KickConfirmDialog
+          visible={kickDialogVisible}
+          member={selectedMember}
+          loading={kickLoading}
+          onConfirm={handleConfirmKick}
+          onCancel={() => {
+            setKickDialogVisible(false)
+            setSelectedMember(null)
+          }}
+        />
+
+        <LeaveConfirmDialog
+          visible={leaveDialogVisible}
+          loading={leaveLoading}
+          onConfirm={handleConfirmLeave}
+          onCancel={() => setLeaveDialogVisible(false)}
+        />
 
         <Card className='group-actions'>
           <View className='group-actions__row'>

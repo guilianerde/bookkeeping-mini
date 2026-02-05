@@ -412,3 +412,44 @@
 .press-opacity {
   @include press-opacity();
 }
+
+// 成员管理相关样式
+.member-strip__toggle {
+  font-size: 24rpx;
+  color: #4f7dff;
+  padding: 8rpx 16rpx;
+  cursor: pointer;
+}
+
+.member-management {
+  margin-bottom: 24rpx;
+}
+
+.member-list {
+  background: #fff;
+}
+
+.member-empty {
+  padding: 60rpx 0;
+  text-align: center;
+}
+
+.member-empty__text {
+  font-size: 28rpx;
+  color: #969799;
+}
+
+.member-actions {
+  padding: 24rpx 32rpx;
+  border-top: 1px solid #f0f0f0;
+}
+
+.leave-room-btn {
+  width: 100%;
+  border-radius: 20rpx;
+  background: #fff;
+  border: 1px solid #ee0a24;
+  color: #ee0a24;
+  font-size: 32rpx;
+  padding: 24rpx 0;
+}

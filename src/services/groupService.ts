@@ -143,6 +143,13 @@ export const getGroupMembers = (groupId: number): GroupMember[] => {
   return all.filter((item) => item.groupId === groupId)
 }
 
+export const fetchGroupMembers = async (groupId: number) => {
+  return request<Record<string, never>, GroupMember[]>({
+    url: `/groups/${groupId}/members`,
+    method: 'GET'
+  })
+}
+
 export const upsertGroupMember = (member: GroupMember) => {
   const all = readStorage<GroupMember[]>(storageKeys.groupMembers, [])
   const next = [member, ...all.filter((item) => !(item.groupId === member.groupId && item.userId === member.userId))]
