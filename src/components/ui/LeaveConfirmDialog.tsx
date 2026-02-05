@@ -16,12 +16,8 @@ export default function LeaveConfirmDialog({ visible, loading, onConfirm, onCanc
         确定要退出房间吗？
       </Dialog.Content>
       <Dialog.Actions>
-        <Dialog.Button onClick={onCancel} disabled={loading}>
-          取消
-        </Dialog.Button>
-        <Dialog.Button onClick={onConfirm} loading={loading} disabled={loading}>
-          确定
-        </Dialog.Button>
+        <Dialog.Button onClick={onCancel} disabled={loading}>取消</Dialog.Button>
+        <Dialog.Button onClick={onConfirm} disabled={loading}>确定</Dialog.Button>
       </Dialog.Actions>
     </Dialog>
   )

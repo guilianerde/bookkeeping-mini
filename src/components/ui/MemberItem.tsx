@@ -29,11 +29,17 @@ export default function MemberItem({ member, isOwner, isSelf, onKick, loading }:
 
   return (
     <View className="member-item">
-      <Image
-        src={member.avatarUrl || '/assets/default-avatar.png'}
-        className="member-item__avatar"
-        mode="aspectFill"
-      />
+      {member.avatarUrl ? (
+        <Image
+          src={member.avatarUrl}
+          className="member-item__avatar"
+          mode="aspectFill"
+        />
+      ) : (
+        <View className="member-item__avatar member-item__avatar--placeholder">
+          <Text>{(member.nickName || '未命名').slice(0, 1)}</Text>
+        </View>
+      )}
       <View className="member-item__info">
         <Text className="member-item__nickname">
           {truncateNickname(member.nickName || '未命名')}

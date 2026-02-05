@@ -415,23 +415,34 @@
 
 // 成员管理相关样式
 .member-strip__toggle {
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #4f7dff;
   padding: 8rpx 16rpx;
   cursor: pointer;
+  border-radius: 12rpx;
+  background: rgba(79, 125, 255, 0.08);
+  transition: all 0.2s;
+
+  &:active {
+    background: rgba(79, 125, 255, 0.15);
+  }
 }
 
 .member-management {
   margin-bottom: 24rpx;
+  overflow: hidden;
 }
 
 .member-list {
   background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
 }
 
 .member-empty {
-  padding: 60rpx 0;
+  padding: 80rpx 0;
   text-align: center;
+  background: #fff;
 }
 
 .member-empty__text {
@@ -442,14 +453,21 @@
 .member-actions {
   padding: 24rpx 32rpx;
   border-top: 1px solid #f0f0f0;
+  background: #fff;
 }
 
 .leave-room-btn {
   width: 100%;
-  border-radius: 20rpx;
+  border-radius: 16rpx;
   background: #fff;
-  border: 1px solid #ee0a24;
+  border: 2rpx solid #ee0a24;
   color: #ee0a24;
   font-size: 32rpx;
+  font-weight: 500;
   padding: 24rpx 0;
+  transition: all 0.2s;
+
+  &:active {
+    background: rgba(238, 10, 36, 0.05);
+  }
 }

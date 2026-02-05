@@ -8,8 +8,6 @@ import './index.scss'
 import Card from '../../components/ui/Card'
 import PrimaryButton from '../../components/ui/PrimaryButton'
 import MemberItem from '../../components/ui/MemberItem'
-import KickConfirmDialog from '../../components/ui/KickConfirmDialog'
-import LeaveConfirmDialog from '../../components/ui/LeaveConfirmDialog'
 import type { GroupExpense, GroupFinal, GroupMember, GroupSession, GroupSettlement } from '../../models/group'
 import {
   ensureGroupSession,
@@ -38,13 +36,11 @@ export default function GroupPage() {
   const [finalDetail, setFinalDetail] = useState<GroupFinal | null>(null)
   const [posterSize, setPosterSize] = useState({ width: 1, height: 1 })
   const [visibleCount, setVisibleCount] = useState(5)
-  const [kickDialogVisible, setKickDialogVisible] = useState(false)
-  const [leaveDialogVisible, setLeaveDialogVisible] = useState(false)
-  const [selectedMember, setSelectedMember] = useState<GroupMember | null>(null)
   const [kickLoading, setKickLoading] = useState(false)
   const [leaveLoading, setLeaveLoading] = useState(false)
   const [showMemberList, setShowMemberList] = useState(false)
   const themeClass = useThemeClass()
+  const currentUserId = getAuthUserId()
 
   useDidShow(() => {
     if (!ensureLoginOrRedirect()) return
@@ -174,7 +170,7 @@ export default function GroupPage() {
           })
           clearGroupCache(session.id)
           setTimeout(() => {
-            Taro.redirectTo({ url: '/pages/groupList/index' })
+            Taro.switchTab({ url: '/pages/record/index' })
           }, 1500)
         } else {
           // 其他成员被踢出或离开
@@ -212,8 +208,6 @@ export default function GroupPage() {
 
     return () => unsubscribe()
   }, [session, currentUserId, members])
-
-  const currentUserId = getAuthUserId()
 
   useEffect(() => {
     setVisibleCount(5)
@@ -340,21 +334,28 @@ export default function GroupPage() {
   }
 
   const handleKickMember = (member: GroupMember) => {
-    setSelectedMember(member)
-    setKickDialogVisible(true)
+    Taro.showModal({
+      title: '确认移除成员',
+      content: `确定要将 ${member.nickName || '该成员'} 移出房间吗？`,
+      confirmText: '确定',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          confirmKickMember(member)
+        }
+      }
+    })
   }
 
-  const handleConfirmKick = async () => {
-    if (!selectedMember || !session) return
+  const confirmKickMember = async (member: GroupMember) => {
+    if (!session) return
     setKickLoading(true)
     try {
-      await kickGroupMember(session.id, selectedMember.userId)
+      await kickGroupMember(session.id, member.userId)
       Taro.showToast({
-        title: `已将 ${selectedMember.nickName || '该成员'} 移出房间`,
+        title: `已将 ${member.nickName || '该成员'} 移出房间`,
         icon: 'success'
       })
-      setKickDialogVisible(false)
-      setSelectedMember(null)
     } catch (error: any) {
       const message = error?.message || '操作失败'
       Taro.showToast({ title: message, icon: 'none' })
@@ -369,10 +370,20 @@ export default function GroupPage() {
       Taro.showToast({ title: '请先转让房主后再退出', icon: 'none' })
       return
     }
-    setLeaveDialogVisible(true)
+    Taro.showModal({
+      title: '确认退出房间',
+      content: '确定要退出房间吗？',
+      confirmText: '确定',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          confirmLeaveRoom()
+        }
+      }
+    })
   }
 
-  const handleConfirmLeave = async () => {
+  const confirmLeaveRoom = async () => {
     if (!session) return
     setLeaveLoading(true)
     try {
@@ -380,7 +391,7 @@ export default function GroupPage() {
       Taro.showToast({ title: '已退出房间', icon: 'success' })
       clearGroupCache(session.id)
       setTimeout(() => {
-        Taro.redirectTo({ url: '/pages/groupList/index' })
+        Taro.switchTab({ url: '/pages/record/index' })
       }, 1500)
     } catch (error: any) {
       const message = error?.message || '操作失败'
@@ -522,7 +533,7 @@ export default function GroupPage() {
                       isOwner={isOwner}
                       isSelf={isSelf}
                       onKick={handleKickMember}
-                      loading={kickLoading && selectedMember?.userId === member.userId}
+                      loading={kickLoading}
                     />
                   )
                 })}
@@ -540,24 +551,6 @@ export default function GroupPage() {
             )}
           </Card>
         )}
-
-        <KickConfirmDialog
-          visible={kickDialogVisible}
-          member={selectedMember}
-          loading={kickLoading}
-          onConfirm={handleConfirmKick}
-          onCancel={() => {
-            setKickDialogVisible(false)
-            setSelectedMember(null)
-          }}
-        />
-
-        <LeaveConfirmDialog
-          visible={leaveDialogVisible}
-          loading={leaveLoading}
-          onConfirm={handleConfirmLeave}
-          onCancel={() => setLeaveDialogVisible(false)}
-        />
 
         <Card className='group-actions'>
           <View className='group-actions__row'>

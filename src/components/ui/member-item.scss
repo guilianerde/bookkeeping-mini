@@ -3,27 +3,47 @@
   align-items: center;
   padding: 24rpx 32rpx;
   background: #fff;
-  border-bottom: 1px solid #f0f0f0
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s;
+
+  &:active {
+    background: #f8f8f8;
+  }
 
   &__avatar {
     width: 88rpx;
     height: 88rpx;
     border-radius: 50%;
     margin-right: 24rpx;
-    flex-shrink: 0
+    flex-shrink: 0;
+    object-fit: cover;
+
+    &--placeholder {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      font-size: 36rpx;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
   }
 
   &__info {
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 16rpx
+    gap: 16rpx;
+    min-width: 0;
   }
 
   &__nickname {
     font-size: 32rpx;
     color: #333;
-    font-weight: 500
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__badge {
@@ -33,11 +53,12 @@
     color: #fff;
     font-size: 22rpx;
     border-radius: 8rpx;
-    line-height: 1.2
+    line-height: 1.2;
+    flex-shrink: 0;
   }
 
   &__kick-btn {
     flex-shrink: 0;
-    min-width: 120rpx
+    min-width: 120rpx;
   }
 }
