@@ -19,7 +19,8 @@ import {
   saveGroupExpense,
   upsertGroupMember,
   kickGroupMember,
-  leaveGroup
+  leaveGroup,
+  fetchGroupMembers
 } from '../../services/groupService'
 import { onGroupMessage, handleMemberChangeMessage } from '../../services/groupWs'
 import { clearGroupCache, removeMemberFromCache } from '../../services/storage'
@@ -105,6 +106,19 @@ export default function GroupPage() {
       setFinalDetail(null)
       setSession(current)
       setMembers(getGroupMembers(current.id))
+
+      // 从后端获取最新的成员列表（包含 role 信息）
+      try {
+        const membersData = await fetchGroupMembers(current.id)
+        if (membersData && membersData.length > 0) {
+          membersData.forEach(member => upsertGroupMember(member))
+          setMembers(membersData)
+        }
+      } catch (error) {
+        // 如果获取失败，使用缓存的成员列表
+        console.log('Failed to fetch members, using cached data')
+      }
+
       const cachedExpenses = getGroupExpenses(current.id)
       setExpenses(cachedExpenses)
       if (!cachedExpenses.length && paramId) {
@@ -153,7 +167,8 @@ export default function GroupPage() {
           userId: payload.userId,
           nickName: payload.nickName,
           avatarUrl: payload.avatarUrl,
-          joinedAt: new Date().toISOString()
+          joinedAt: new Date().toISOString(),
+          role: payload.role || (payload.userId === currentUserId ? 'owner' : 'member')
         })
         setMembers(getGroupMembers(session.id))
         return
