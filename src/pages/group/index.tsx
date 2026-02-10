@@ -1,4 +1,4 @@
-import { Button, Canvas, Image, ScrollView, View, Text } from '@tarojs/components'
+﻿import { Button, Canvas, Image, ScrollView, View, Text } from '@tarojs/components'
 import Taro, { useDidShow, useRouter, useShareAppMessage } from '@tarojs/taro'
 import { useEffect, useMemo, useState } from 'react'
 import { Cell, SafeArea } from '@taroify/core'
@@ -217,7 +217,7 @@ export default function GroupPage() {
           dateISO: payload.dateISO ?? new Date().toISOString()
         }
         saveGroupExpense(expense)
-        setExpenses((prev) => [expense, ...prev.filter((item) => item.id !== expense.id)])
+        setExpenses(getGroupExpenses(session.id))
       }
     })
 

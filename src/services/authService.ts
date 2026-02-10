@@ -1,6 +1,6 @@
 import Taro from '@tarojs/taro'
 import type { Result } from '../models/api'
-import { API_BASE_URL, AUTH_LOGIN_PATH } from '../config/api'
+import { API_BASE_URL, AUTH_LOGIN_PATH, UPLOAD_AVATAR_PATH } from '../config/api'
 
 const AUTH_TOKEN_KEY = 'auth_token'
 const AUTH_PROFILE_KEY = 'auth_profile'
@@ -84,6 +84,36 @@ export type LoginResponse = {
   token: string
   userId: string
   nickname?: string
+}
+
+type UploadAvatarPayload = {
+  url?: string
+}
+
+export const uploadAvatar = async (filePath: string) => {
+  const res = await Taro.uploadFile({
+    url: `${API_BASE_URL}${UPLOAD_AVATAR_PATH}`,
+    filePath,
+    name: 'file'
+  })
+  let data: any = res.data
+  if (typeof data === 'string') {
+    try {
+      data = JSON.parse(data)
+    } catch {
+      data = null
+    }
+  }
+  const successCodes = new Set([0, 200, '0', '200'])
+  if (!data || !successCodes.has(data.code)) {
+    throw new Error(data?.message || '头像上传失败')
+  }
+  const payload = data.data as UploadAvatarPayload
+  const url = payload?.url
+  if (!url) {
+    throw new Error('头像上传失败')
+  }
+  return url
 }
 
 export const loginWithWeChat = async (profile?: AuthProfile) => {

@@ -1,4 +1,4 @@
-import { View, Text, Input, Picker } from '@tarojs/components'
+﻿import { View, Text, Input, Picker } from '@tarojs/components'
 import Taro, { useDidShow, useRouter } from '@tarojs/taro'
 import { useMemo, useState } from 'react'
 import { SafeArea } from '@taroify/core'
@@ -8,7 +8,7 @@ import './index.scss'
 import Card from '../../../components/ui/Card'
 import PrimaryButton from '../../../components/ui/PrimaryButton'
 import type { GroupSession } from '../../../models/group'
-import { addLocalExpense, ensureGroupSession, getJoinedGroupById } from '../../../services/groupService'
+import { addLocalExpense, ensureGroupSession, getJoinedGroupById, getGroupMembers } from '../../../services/groupService'
 import { sendGroupExpense } from '../../../services/groupWs'
 import { useThemeClass } from '../../../utils/theme'
 import { getAuthUserId } from '../../../services/authService'
@@ -62,10 +62,12 @@ export default function GroupRecordPage() {
       Taro.showToast({ title: '请输入正确金额', icon: 'none' })
       return
     }
+    console.log("currentSession------")
     let currentSession = session
     if (!currentSession && groupId) {
       try {
         currentSession = await ensureGroupSession(groupId)
+        console.log("currentSession", JSON.stringify(currentSession))
         setSession(currentSession)
       } catch (error) {
         Taro.showToast({ title: '请先加入活动', icon: 'none' })
@@ -78,6 +80,9 @@ export default function GroupRecordPage() {
     }
 
     const remark = description.trim()
+    const selfMember = getGroupMembers(currentSession.id).find((member) => member.userId === currentUserId)
+    const selfName = selfMember?.nickName
+    const selfAvatar = selfMember?.avatarUrl
 
     try {
       await sendGroupExpense(
@@ -86,7 +91,10 @@ export default function GroupRecordPage() {
           type: 'expense',
           amount: numericAmount,
           title: description.trim() || '多人记账',
-          remark
+          remark,
+          userId: payerId ?? currentUserId ?? undefined,
+          nickName: selfName,
+          avatarUrl: selfAvatar
         },
         currentSession.wsPath
       )
@@ -100,7 +108,9 @@ export default function GroupRecordPage() {
       amount: numericAmount,
       title: description.trim() || '多人记账',
       remark,
-      userId: payerId ?? undefined
+      userId: payerId ?? currentUserId ?? undefined,
+      userName: selfName,
+      userAvatar: selfAvatar
     })
 
     Taro.showToast({ title: '已记录', icon: 'success' })

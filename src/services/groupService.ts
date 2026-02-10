@@ -1,4 +1,4 @@
-import { request } from './request'
+﻿import { request } from './request'
 import { readStorage, storageKeys, writeStorage } from './storage'
 import type { GroupExpense, GroupFinal, GroupMember, GroupSession, GroupSettlement } from '../models/group'
 import { connectGroupSocket, disconnectGroupSocket, getGroupSocketState } from './groupWs'
@@ -124,7 +124,7 @@ export const saveGroupExpense = (expense: GroupExpense) => {
   writeStorage(storageKeys.groupTransactions, next)
 }
 
-export const addLocalExpense = (groupId: number, payload: { amount: number; title?: string; remark?: string; userId?: number }) => {
+export const addLocalExpense = (groupId: number, payload: { amount: number; title?: string; remark?: string; userId?: number; userName?: string; userAvatar?: string }) => {
   const expense: GroupExpense = {
     id: `local_${Date.now()}`,
     groupId,
@@ -132,6 +132,8 @@ export const addLocalExpense = (groupId: number, payload: { amount: number; titl
     title: payload.title,
     remark: payload.remark,
     userId: payload.userId,
+    userName: payload.userName,
+    userAvatar: payload.userAvatar,
     dateISO: new Date().toISOString()
   }
   saveGroupExpense(expense)
